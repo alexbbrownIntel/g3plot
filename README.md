@@ -14,8 +14,7 @@ Add Shiny inputs to the app to control graph filtering and more.
 Licence
 -------
 
-This will shortly receive and open source licence.  Please take care not to include
-confidential information in this repository.
+See the files LICENCE and NOTICE for licence terms.
 
 Usage as a demo app
 -------------------
