@@ -415,7 +415,7 @@ DNase_plot <- function(dataName) {
        geom="point", 
        #onBrush=list(x=list(drag=list(filter=TRUE))),
        scales=list(x="linear",y="linear"), # want to use rangebanded linear here really.  x will be misaligned
-       grid=list(key="Experiment",
+       grid=list(key=list(Experiment="Experiment"),
                  group="Replicate",
                  value="Response")#,
   #     extents=list(y=0,x=with(aHist,breaks[length(breaks)]))
