@@ -89,11 +89,11 @@
       //  style("pointer-events",event?"auto":"none") // prevents hover
   
       a
-     //   .transition()
+        .transition()
         .call(geom.position)
   
       a.exit()
-      //  .transition()
+        .transition()
         .attr("r", 0)
         .remove()
         

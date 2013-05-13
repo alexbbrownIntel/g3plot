@@ -600,7 +600,7 @@
 
         xAxisNode
           .attr("transform", "translate(0," + height + ")")
-          .select("text")
+          .select("text").filter(function(d,i){return i==0})
             .attr("x", width)
             .attr("y", -6)
             .style("text-anchor", "end")
