@@ -42,8 +42,8 @@ AirPassengers_plotinput = function(...) {
 
 sunspots_plotinput = function(...) {
   tagList(
-    textInput("startDate","start date","-6974006400000"),
-    textInput("endDate","end date","439113600000")    
+    textInput("startDate","start date","-4360176000000"),
+    textInput("endDate","end date","-4010428800000")    
   )
 }
 
