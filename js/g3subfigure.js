@@ -791,7 +791,15 @@
           })
   
           .text( function(d){
-            return graph.labels.y + (("undefined"==d.key)?"":(" "+d.key))
+ 						// handle yfacet type for date
+
+						scaleYFacet = 
+							(graph.scales && graph.scales.yfacet) ? graph.scales.yfacet : "linear"
+
+					  return graph.labels.y + (("undefined"==d.key)?""
+						  : (" "+( scaleYFacet=="date" 
+							         ? (new Date(+d.key)).toDateString() // what about format?
+											 : d.key )));
           } )
         
       // draw a legend if we have used any colors
