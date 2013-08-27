@@ -894,7 +894,14 @@
                 d3.event.stopPropagation(); //? no idea what this does
               };
             }
-            
+
+          case "area": // different way to send values
+            if(!fast)
+              dataPointSelector = g3geoms[geom](layerFacet,function(d){return d3.nest().key(function(d){return d.Color}).entries(d.values)},color,clickEvent)
+                .draw(layerFacet)
+            else
+              g3geoms[geom](layerFacet,function(d){return [d.values]},color,clickEvent)
+                .fast_redraw(layerFacet)
               
             if(!fast)
               dataPointSelector = g3geoms[geom](layerFacet,function(d){return d.values},color,clickEvent)
@@ -920,16 +927,6 @@
               
             break;
 
-          case "area": // different way to send values
-            if(!fast)
-              dataPointSelector = g3geoms[geom](cellFacet,function(d){return d3.nest().key(function(d){return d.Color}).entries(d.values)},color,clickEvent)
-                .draw(cellFacet)
-            else
-              g3geoms[geom](cellFacet,function(d){return [d.values]},color,clickEvent)
-                .fast_redraw(cellFacet)
-              
-            break;
-      
           default:
             throw({message:"Unknown geom=\""+geom+"\" in plot specification for layer XXX"})  
         }
