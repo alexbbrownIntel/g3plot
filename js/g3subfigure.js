@@ -900,6 +900,7 @@
                 .fast_redraw(layerFacet)
               
             break;
+
           case "line": // different way to send values
             if(!fast)
               dataPointSelector = g3geoms[geom](layerFacet,function(d){
@@ -914,10 +915,20 @@
                 .fast_redraw(layerFacet)
               
             break;
+
+          case "area": // different way to send values
+            if(!fast)
+              dataPointSelector = g3geoms[geom](cellFacet,function(d){return d3.nest().key(function(d){return d.Color}).entries(d.values)},color,clickEvent)
+                .draw(cellFacet)
+            else
+              g3geoms[geom](cellFacet,function(d){return [d.values]},color,clickEvent)
+                .fast_redraw(cellFacet)
+              
+            break;
       
           default:
             throw({message:"Unknown geom=\""+geom+"\" in plot specification for layer XXX"})  
-          }
+        }
         })
 
         })

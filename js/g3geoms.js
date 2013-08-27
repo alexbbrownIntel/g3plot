@@ -250,7 +250,66 @@
   }
   
   
-    // draw points.
+  // draw area. y0 is 0 for the moment
+  // yScale input is carried in the facet
+  exports.area  = function(plot,globalData,color,event) {
+    // subfigure redraws.
+    function geom() {
+    }
+
+    geom.position = function(l) {
+        l
+          .x(function(d) { return xFacetScale(this)(d.X) })
+          .y1(function(d) { return yFacetScale(this)(d.Y) })
+          .y0(function(d) { return yFacetScale(this)(0) })
+          .defined(function(d) { return !d.Missing })
+        return (l)
+    }
+   
+    geom.draw = function area_draw(plot,data) {
+      if (!data) data = globalData
+      
+      var a = plot.selectAll("path.area")
+          .data(data)
+  
+      a.enter().append("path")
+          .datum(function(d){return d})
+          .attr("class", "area")
+          .style("stroke","none")
+          .style("fill",function(d){return color(d.key)})
+          .attr("d", function(d){return geom.position.call(this,d3.svg.area()).call(this,d.values)})
+          .append("title")
+        
+      a.select("title")
+        .text( labelFn("Color") )
+                  
+      a
+        .on("click",event) // if null, removes event
+        .style("cursor",event?"pointer":null)
+  
+      a
+     //   .transition()
+        .attr("d", function(d){return geom.position.call(this,d3.svg.area()).call(this,d.values)})
+  
+      a.exit()
+    //    .transition()
+        .attr("r", 0)
+        .remove()
+        
+      return("path.area")
+    }
+    
+    geom.fast_redraw = function fast_redraw_area(plot) {
+      var a = plot.selectAll(".area")
+  
+      a
+        .attr("d", function(d){return geom.position.call(this,d3.svg.area()).call(this,d.values)})
+    }
+    
+    return geom
+  }
+
+  // draw points.
   // yScale input is carried in the facet
   exports.line  = function(plot,globalData,color,event) {
     // subfigure redraws.
