@@ -499,7 +499,8 @@
               
             xFacetAxis
               .each(function(d,i){
-                d.brush.rebrush() // reposition and redraw the brushes
+                // and if no brushes?
+                if(d.brush) d.brush.rebrush() // reposition and redraw the brushes
               
           })
         })
