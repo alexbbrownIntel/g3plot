@@ -334,7 +334,8 @@
   
         var countFacets = allFacets.length
         
-        var facetMargin = (graph.dimensions.facetMargin && !_.isUndefined(graph.dimensions.facetMargin.y)) ?
+        var facetMargin = (graph.dimensions && 
+                           graph.dimensions.facetMargin && !_.isUndefined(graph.dimensions.facetMargin.y)) ?
 				  graph.dimensions.facetMargin.y : 20
         
         var y = yScale_master.copy()
