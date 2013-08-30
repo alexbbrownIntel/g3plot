@@ -787,6 +787,9 @@
                 s
                   .attr("y", function(d){return d.yScale.range()[1]})
                   .attr("x", 6) // or x for vertical
+									// http://www.w3.org/TR/SVG/text.html#BaselineAlignmentProperties
+									// TODO: make this configurable - or via stylesheet?
+                  .attr("alignment-baseline", "baseline")
                   .style("text-anchor", "start")
                 break;
             }
