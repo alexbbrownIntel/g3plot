@@ -497,9 +497,8 @@
               .redrawAxes()
               .redrawGeoms()
               
-            xFacetAxis
+          xFacetAxis
               .each(function(d,i){
-                // and if no brushes?
                 if(d.brush) d.brush.rebrush() // reposition and redraw the brushes
               
           })
@@ -535,7 +534,7 @@
           
         xFacetAxis
           .each(function(d,i){
-            d.brush.rebrush() // reposition and redraw the brushes
+            if(d.brush) d.brush.rebrush() // reposition and redraw the brushes
           })
                           
         var endZoom = d3.event.sourceEvent.type=="mouseup"
