@@ -231,7 +231,13 @@
       //aesData = plan.data.aesthetic,
       //aesStructure = plan.metaData.aestheticStructure;
       
-      var layerdata = _.map(plan.layers,subfigure.setupLayerData)
+      var layerdata1 = _.map(plan.layers,subfigure.setupLayerData)
+      
+      // convert the array of layer parameters to parameter arrays [{a:1},{a:2}] => {a:[1,2]}
+      var twoargs=function(f){return function(x,y){return f(x,y)}}
+      var objectArraysToArrayObjects=function(d){return (function(k){return _.object(k,_.map(k,function(x){return _.pluck(d,x)}))})(_.chain(d).map(_.keys).reduce(twoargs(_.unique)).value())}
+
+      var layerData = objectArraysToArrayObjects(layerdata1)
       
       // Setup axes    
       if (!_.isUndefined(graph.aesthetic.XCluster)) {
