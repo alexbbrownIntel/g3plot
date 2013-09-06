@@ -74,13 +74,15 @@ Common Name | Entity | Arity | Class           | File        | Message Part     
 Document    | HTML   | 1     |                 | UI.R        | -                 | the web page
 report      | DIV*   | n     | g3plotMultiPlex | g3widget.js | Array of arrays   | the shiny output
 section     | DIV    | n     | pane            | g3report.js | Array of list(name=?)    | a single formatted d3 object - one of "plot" "list" or other text
-figure+data | DIV    | 1     | plot            | g3plot.js   | ditto             | A combination of a drawing region with linked html table
+figure+grid | DIV    | 1     | plot            | g3plot.js   | ditto             | A combination of a drawing region with linked html table
 figure      | SVG    | 1     | d3svg           | g3plot.js   | ditto             | A single drawing region with any contents
 subfigure     | G      | n     | subplot         | g3subfigure.js   | List(name=?)      | container for a plot with distinct axes, data, legends
 plot        | G      | 1     | plot            | g3plot.js   | ditto             | the bit inside the axes
 y facet     | G      | J     | facet           | g3plot.js   | aesthetic(YFacet=?)          | the Jth horizontal slice with a personal clone of the Y scale
 x facet     | G      | K     | y facet         | g3plot.js   | aesthetic(XCluster=?)| the Kth vertical slice of the Jth horizontal
+layer       | G      | L     | layer           | g3plot.js   | Array of list(name=?)    | a single formatted d3 object - one of "layer"
 geom        | ?      | many  | dot/bar/...     | g3geom.js   | aesthetic(geom=?) | an actual drawing component
+grid        | TABLE  | 1     | XX?table        | ?           | like layer but grid | An html table
 
 TODO
 ----
