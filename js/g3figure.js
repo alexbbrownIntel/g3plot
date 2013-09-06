@@ -194,20 +194,43 @@
     })
     subFigure.exit().remove();
     
+    // returns length of (first?) valid aesthetic or undefined if none
+    var hasAesthetic = function hasAesthetic(plan,aesthetic) {
+      // look in global aesthetic structure first
+      var aesthetics = []
+      if (plan.metaData && plan.aestheticStructure && plan.metaData.aestheticStructure[aesthetic]) {
+        aesthetics.push(plan.metaData.aestheticStructure[aesthetic])
+      }
+      // look in local aesthetic next
+      _.map(plan.layers,function(l){
+        if (l.metaData.aestheticStructure[aesthetic]) {
+          aesthetics.push(l.metaData.aestheticStructure[aesthetic])         
+        }
+      })
+      // return the length of the olength of the first aesthetic (or 1 for atomics or objects)
+      return _.isObject(aesthetics[1]) ?
+        _.keys(aesthetics[1]).length : !_.isUndefined(aesthetics[1])
+    }
     
-    // calculate the inner sizes for the subFigure
+    // adjust figure margins where aesthetics require guides
     subFigure
       .each(function(plan,i){
         var xAxisHeight = 0
         var xClusterAxisHeight = 0
-        if (plan.metaData.aestheticStructure.X) {
+        var legendWidth = 60
+        if (hasAesthetic(plan,"X")) {
           xAxisHeight += 25
         }
-        if (plan.metaData.aestheticStructure.XCluster) {
+        if (hasAesthetic(plan,"XCluster")) {
           // 1+length because there's always an outer cluster to select all
-          xClusterAxisHeight = (1+_.keys(plan.metaData.aestheticStructure.XCluster).length) * 20
+          xClusterAxisHeight = (1+hasAesthetic(plan,"XCluster")) * 20
+        }
+        if (hasAesthetic(plan,"Color") || hasAesthetic(plan,"Fill")) {
+          // 1+length because there's always an outer cluster to select all
+          legendWidth += 100
         }
 
+        // TODO: enable user to disable showing guides
         
         var s=d3.select(this);
         // calculate the inner sizes.  Should go in d3subfigure since
@@ -218,7 +241,7 @@
         var dimensions = plan.dimensions
         dimensions.margin = {
           top: (widgets.size=="history")?0:20, 
-          right: 160,
+          right: legendWidth,
           bottom: (widgets.size=="mini")?10:
                   (widgets.size=="history")?25:(xAxisHeight + xClusterAxisHeight),
           xcluster: xClusterAxisHeight,
