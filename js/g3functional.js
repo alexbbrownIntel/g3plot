@@ -19,6 +19,9 @@
     }
     return followChainAccessor
   }
+  
+  // other utilities
+  exports.pluralise = function(x){return typeof(x)==="undefined"?[]:_.isArray(x)?x:[x]}
 
 
 })(typeof exports === 'undefined'? this['g3functional']={}: exports);

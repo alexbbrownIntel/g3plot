@@ -107,10 +107,9 @@
       }
       
       // calculate unzoomed domains
-      var pluralise = function(x){return typeof(x)==="undefined"?[]:_.isArray(x)?x:[x]}
       // note that this domain calculation ignores any use of x0 or dx and might not get
       // scales right for objects with those.
-      var xData = _.pluck(aesData,"X").concat(pluralise(graph.extents && graph.extents.x))
+      var xData = _.pluck(aesData,"X").concat(g3functional.pluralise(graph.extents && graph.extents.x))
       if (graph.aesthetic.DX)
       xData = xData.concat(aesData.map(function(d){return +d.X+d.DX})) // assume right extend DX
       var numerise = function(x){return _.map(x,function(x){return +x})}
@@ -235,8 +234,7 @@
           case "ordinal": { 
             // possible options here allow domain to be adjusted per x facet 
             // this code is a clone of code above in ordinal
-            var pluralise = function(x){return typeof(x)==="undefined"?[]:_.isArray(x)?x:[x]}
-            var xData = _.pluck(facet.values,"X").concat(pluralise(graph.extents && graph.extents.x))
+            var xData = _.pluck(facet.values,"X").concat(g3functional.pluralise(graph.extents && graph.extents.x))
             if (graph.aesthetic.DX)
               xData = xData.concat(aesData.map(function(d){return +d.X+d.DX})) // assume right extend DX
             x.domain(xData)
