@@ -47,7 +47,8 @@ renderG3Plot <- function(func)
     
     canoniseMessage = function(val) {
       if(val$type=="plot") {
-        val$table=forceTableVector(val$table)
+        # TODO: process layers - but no need since forceTableVector is always done manually
+#        val$table=forceTableVector(val$table)
         val
       } else {
         val
