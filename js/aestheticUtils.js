@@ -15,10 +15,10 @@
       return recordWalker.other(
         // for each string S in structure, pull out the indexed element
         // of the array named S in data.
-        recordWalker.indexedMemberOf(message.table,index))(structure);
+        recordWalker.indexedMemberOf(message.data,index))(structure);
     }
     // the number of records:
-    var recordCount = _.values(message.table)[0].length
+    var recordCount = _.values(message.data)[0].length
     // use the walker to map the structure onto the data
     var records = d3.range(0,recordCount).map(buildRecord)
     
