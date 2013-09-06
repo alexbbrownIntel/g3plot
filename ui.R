@@ -21,7 +21,7 @@ lapply(Sys.glob(c("*.R","*.js","js/*.js")),
 shinyUI(pageWithSidebar(
   
   # Application title
-  headerPanel(tags$a(href="https://github.com/alexbbrown/g3plot-1","G3plot=D3(Shiny(data())"),windowTitle="G3plot for Shiny and D3"),
+  headerPanel(tags$a(href="https://github.com/alexbbrown/g3plot-1","G3plot=D3(Shiny(data()))"),windowTitle="G3plot for Shiny and D3"),
       
   sidebarPanel(
     tags$p("A demo of Intel's (c) g3plot API (BSD licence) using standard R data sets."),
