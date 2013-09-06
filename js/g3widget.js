@@ -40,8 +40,8 @@
     
     d3.select(el).select("div.content").transition().style("visibility","visible");
     
-    // Close all jquery error alerts.  may be overkill
-    $(".alert-error").alert('close')
+    // Close all associated errors
+    $(el).find(".alert-error").alert('close')
   }
   
 })(typeof exports === 'undefined'? this['g3widget']={}: exports);
