@@ -63,5 +63,25 @@
       return _.isUndefined(filterWalker.walk(aesFilterSpec,record))
     }    
   }
+  
+  // utilities - shouldn't be here really since it's about the concrete plan containing aesthetics.
+  
+  // returns length of (first?) valid aesthetic or undefined if none
+  exports.hasAesthetic = function hasAesthetic(plan,aesthetic) {
+    // look in global aesthetic structure first
+    var aesthetics = []
+    if (plan.metaData && plan.aestheticStructure && plan.metaData.aestheticStructure[aesthetic]) {
+      aesthetics.push(plan.metaData.aestheticStructure[aesthetic])
+    }
+    // look in local aesthetic next
+    _.map(plan.layers,function(l){
+      if (l.metaData.aestheticStructure[aesthetic]) {
+        aesthetics.push(l.metaData.aestheticStructure[aesthetic])         
+      }
+    })
+    // return the length of the olength of the first aesthetic (or 1 for atomics or objects)
+    return _.isObject(aesthetics[1]) ?
+      _.keys(aesthetics[1]).length : !_.isUndefined(aesthetics[1])
+  }
 
 })(typeof exports === 'undefined'? this['aestheticUtils']={}: exports);
