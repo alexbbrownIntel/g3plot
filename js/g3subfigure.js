@@ -99,20 +99,6 @@
       // unbundle the plot message
       graph = plan.data.message
       
-      // work out what the scales are
-      // TODO: this should be well known from defaults set up way earlier
-      
-      // Global scales for x, y, color
-      // this scale will be copied everywhere.  for now.
-      scaleX = 
-        (graph.scales && graph.scales.x && graph.scales.x) ? graph.scales.x : "linear"
-      if (!aestheticUtils.hasAesthetic(plan,"X")) {
-        scaleX = "unit"
-      }
-      
-      scaleY = 
-        graph.scales && graph.scales.y && graph.scales.y || "linear"
-      
       // don't choose colorfield yet since it's layer dependent and HAS the SAME SCALE (probably)
       
       // These don't exist yet.
@@ -124,39 +110,22 @@
       
       var aesData = d3.merge(postTransformLayers)
       
-      // convert the array of layer parameters to parameter arrays [{a:1},{a:2}] => {a:[1,2]}
-      var twoargs=function(f){return function(x,y){return f(x,y)}}
-      var objectArraysToArrayObjects=function(d){return (function(k){return _.object(k,_.map(k,function(x){return _.pluck(d,x)}))})(_.chain(d).map(_.keys).reduce(twoargs(_.unique)).value())}
-
-      var layerData = objectArraysToArrayObjects(layerdata1)
+      // Setup axes
       
-      // Setup axes    
-      if (!_.isUndefined(graph.aesthetic.XCluster)) {
+      // xCluster Axis.  this one is special because the structure MUST exist and be the same
+      // for all layers.  This is not validated right now
+      // TODO: validate xCluster equivalence
+      // in the future we may allow one layer to apply to all clusters, but it's not clear
+      // right now how that might be implemented.
+      if (aestheticUtils.hasAesthetic(plan,"XCluster")) {
         // Build the data struture for the hierarchical x-scale/X-axis.
         // It would be nice if this were a real d3 axis type, but that would require
         // nested heterogenous axis with variable size rangebands.  Not possible today
-        partitionedNodes = g3xcluster.hierarchX(aesData,graph.aesthetic.XCluster, aesStructure.XCluster, width, margin.xcluster)
-        
+        partitionedNodes = g3xcluster.hierarchX(aesData,plan.layers[0].aesthetic.XCluster, 
+                                                plan.layers[0].metadata.aestheticStructure.XCluster, width, margin.xcluster)
       } else {
         // do it anyway, with no data, for uniformity   
         partitionedNodes = g3xcluster.hierarchX(aesData,"IGNORE THIS MESSAGE", {}, width, margin.xcluster)
-      }
-    
-      // Do calculation for stacked bars.  Not sure how this gets called.
-      if(graph.position && graph.position.x == "stack") { // is this X?
-        g3stats.barStack(aesData, "Fill")  
-      } else {
-        if (!_.isUndefined(graph.aesthetic.XCluster)) {
-          _.each(aesData,function(d){
-            d.y=d.Y // y is simply Y
-            d.y0=0 // so that bars can be drawn from unstacked data,
-        }) } else {
-          _.each(aesData,function(d){
-            d.y=d.Y // y is simply Y
-            d.y0=0 // so that bars can be drawn from unstacked data,
-            d.x=d.X
-        })
-        }
       }
       
       // Calculate the subset of axes/data for each y-facet (vertical 'small multiple')
@@ -165,18 +134,31 @@
       // also split x, in order to calculate facet scales - per column
       xFacetedData = g3figureDataUtils.facetData(aesData,"XCluster","X")
     
-
-      
       // calculate unzoomed domains
       // note that this domain calculation ignores any use of x0 or dx and might not get
       // scales right for objects with those.
       var xData = _.pluck(aesData,"X").concat(g3functional.pluralise(graph.extents && graph.extents.x))
-      if (graph.aesthetic.DX)
-      xData = xData.concat(aesData.map(function(d){return +d.X+d.DX})) // assume right extend DX
+      if (aestheticUtils.hasAesthetic(plan,"DX"))
+        xData = xData.concat(aesData.map(function(d){return +d.X+d.DX?d.DX:0})) // assume right extend DX
+  
       var numerise = function(x){return _.map(x,function(x){return +x})}
             
-      // TODO: Merge scales
-            
+            // work out what the scales are
+      // TODO: this should be well known from defaults set up way earlier
+      
+      // Global scales for x, y, color
+      scaleX = 
+        (graph.scales && graph.scales.x && graph.scales.x) ? graph.scales.x : "linear"
+      if (!aestheticUtils.hasAesthetic(plan,"X")) {
+        scaleX = "unit"
+      }
+      
+      scaleY = 
+        graph.scales && graph.scales.y || "linear"
+      
+      var scaleColor = 
+        graph.scales && graph.scales.color || "ordinal"
+           
       switch(scaleX) {
         case "ordinal":
           xScale_master = d3.scale.ordinal()
@@ -195,63 +177,65 @@
             .domain(1) // need to update this later.
           break;
         default:
-          throw("Unknown scale type: \""+"scaleX"+"\"");
+          throw("Unknown x scale type: \""+scaleX+"\"");
           break;
       }
       
       
       // all the y's share a DOMAIN at the moment - 
       // so build it here, once
-      if (graph.scales && graph.scales.y && graph.scales.y == "log") {
-        yScale_master = d3.scale.log()
+      switch(scaleY) {
+        case "log":
+          yScale_master = d3.scale.log()
             // extent is over ALL data here - is that appropriate? not always.
             .domain(d3.extent(aesData, function(d) { return d.Y; }))
-    
-      } else {
-        yScale_master = d3.scale.linear()
-        
-        if (plan.data.message.extents && !_.isUndefined(plan.data.message.extents.y)) {
-          if (!_.isArray(plan.data.message.extents.y))
-            plan.data.message.extents.y = [plan.data.message.extents.y]
-          yScale_master.domain(d3.extent(aesData.concat(_.map(plan.data.message.extents.y,function(y){return {y:y}})), 
-            function(d) { return ((d.y0+d.y)||d.y); })).nice();
-        } else {
-           // temporarily suppress 0 inclusion
-          yScale_master.domain(d3.extent(aesData, function(d) { return ((d.y0+d.y)||d.y); })).nice();
-        }
-      }
-      
-      var colorField=
-              _.chain(aesStructure)
-                .keys()
-                .intersection(["Color","Fill"])
-                .first().value()
-      switch(colorField && graph.scales[colorField] || "ordinal") {
-        case "ordinal":
-          color = d3.scale.category20();
-          // Inject alpha sorted fields into color right now,
-          // to prevent color jitter when 'animating' between
-          // two sims for the same data.  Could be better.
-          if (colorField=
-              _.chain(aesStructure)
-                .keys()
-                .intersection(["Color","Fill"])
-                .first().value())
-          {
-            if (plan.data.message.extents && plan.data.message.extents[colorField]) {
-              color.domain(plan.data.message.extents[colorField])
-            } else {
-              color.domain(_.unique(_.pluck(aesData,colorField)).sort())
-            }
-          }
           break;
         case "linear":
-          color = d3.scale.log()
-            .domain(d3.extent(aesData, function(d) { return +d[colorField] }))
-            .range(["red","yellow"]);
+          yScale_master = d3.scale.linear()
+          
+          if (plan.data.message.extents && !_.isUndefined(plan.data.message.extents.y)) {
+            if (!_.isArray(plan.data.message.extents.y))
+              plan.data.message.extents.y = [plan.data.message.extents.y]
+            yScale_master.domain(d3.extent(aesData.concat(_.map(plan.data.message.extents.y,function(y){return {y:y}})), 
+              function(d) { return ((d.y0+d.y)||d.y); })).nice();
+          } else {
+             // temporarily suppress 0 inclusion
+            yScale_master.domain(d3.extent(aesData, function(d) { return ((d.y0+d.y)||d.y); })).nice();
+          }
           break;
         default:
-          color = null;
+          throw("Unknown x scale type: \""+scaleX+"\"");
+          break;
+      }
+      
+      if(aestheticUtils.hasAesthetic(plan,"Color")) {
+        switch(graph.scales.color) {
+          case "ordinal":
+            color = d3.scale.category20();
+            // Inject alpha sorted fields into color right now,
+            // to prevent color jitter when 'animating' between
+            // two sims for the same data.  Could be better.
+            if (colorField=
+                _.chain(aesStructure)
+                  .keys()
+                  .intersection(["Color","Fill"])
+                  .first().value())
+            {
+              if (plan.data.message.extents && plan.data.message.extents[colorField]) {
+                color.domain(plan.data.message.extents[colorField])
+              } else {
+                color.domain(_.unique(_.pluck(aesData,colorField)).sort())
+              }
+            }
+            break;
+          case "linear":
+            color = d3.scale.log()
+              .domain(d3.extent(aesData, function(d) { return +d[colorField] }))
+              .range(["red","yellow"]);
+            break;
+          default:
+            color = null;
+        }
       }
 
       xScale_current = xScale_master.copy()
@@ -298,7 +282,7 @@
             // possible options here allow domain to be adjusted per x facet 
             // this code is a clone of code above in ordinal
             var xData = _.pluck(facet.values,"X").concat(g3functional.pluralise(graph.extents && graph.extents.x))
-            if (graph.aesthetic.DX)
+            if (graph.aesthetic.DX) // TODO: fixme somehow
               xData = xData.concat(aesData.map(function(d){return +d.X+d.DX})) // assume right extend DX
             x.domain(xData)
             
@@ -434,6 +418,10 @@
       },function(d){
         return d.key
       })
+      
+      // (re)build layers
+      
+      
       
       var positionCellFacet = function(cellFacet) {
         if (cellFacetSVG) {
@@ -625,6 +613,8 @@
       return subfigure
     }
     
+    subfigure.setupLayers = function(){}
+    
     // redrawAxes draws the axes and legends.  It should be called
     // at least once before redrawGeoms is called. (old comment)
     subfigure.redrawAxes = function redrawAxes(fast) 
@@ -634,7 +624,7 @@
       
       // draw the XCluster axis
       // note deep clusters or XCluster + X axis can be visually ugly sometimes.
-      if (graph.aesthetic.XCluster) 
+      if (aestheticUtils.hasAesthetic(plan,"XCluster")) 
       {
         var clickEvent = 
           graph.onClick && graph.onClick.XCluster &&
@@ -766,10 +756,11 @@
           } )
         
       // draw a legend if we have used any colors
-      if (graph.aesthetic.Color || graph.aesthetic.Fill) {
+      if (aestheticUtils.hasAesthetic(plan,"Color")) {
         legendAesthetic = graph.aesthetic.Color?"Color":"Fill"
         var legendPos = {x:width+5,y:0};
-        var clickEvent = graph.onClick && graph.onClick[legendAesthetic] &&
+        var clickEvent = graph.onClick && graph.onClick.Color &&
+        // this will fail - TODO
           function(d){g3figure.filter.update(d?_.object([aesStructure[legendAesthetic]],
                                      [function(x){
                                        return x==d
