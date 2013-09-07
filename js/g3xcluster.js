@@ -37,7 +37,7 @@
       
     // the height used for y partitioning needs to take into account the
     // values row (which we aren't using, and the All row, which isn't in
-    // the origianl aesthetic), hence it's height*(n+2)/(n+1)
+    // the original aesthetic), hence it's height*(n+2)/(n+1)
     var xlength = 1+_.values(XClusterAesthetic).length
     var rowsToDrop=1
     // rowsToDrop is trying to drop the inner nests, since
