@@ -43,30 +43,17 @@
         cellFacet, // the cell facet selector
         dataPointSelector; // how to select all geoms.  This should be easier
 
-    // for each layer, partition the data by facets and clusters and calculate the domains
-    subfigure.setupLayerData=function(layer){
+    // for each layer, perform any stats which are required.  After this, the layers
+    // are combined into a single array.  Current stats are just barStack.
+    subfigure.doLayerStats=function(layer){
            
       // expects scaleX, width, margin etc to be already set-up by caller
            
       // unbundle the plot message
       var aesthetic = layer.data.message.aesthetic
       var position = layer.data.message.position
-      var strData = layer.data.structured
       var aesData = layer.data.aesthetic
       var aesStructure = layer.metaData.aestheticStructure
-      var partitionedNodes
-      
-      // Setup axes    
-      if (!_.isUndefined(aesthetic.XCluster)) {
-        // Build the data struture for the hierarchical x-scale/X-axis.
-        // It would be nice if this were a real d3 axis type, but that would require
-        // nested heterogenous axis with variable size rangebands.  Not possible today
-        partitionedNodes = g3xcluster.hierarchX(aesData,aesthetic.XCluster, aesStructure.XCluster, width, margin.xcluster)
-        
-      } else {
-        // do it anyway, with no data, for uniformity   
-        partitionedNodes = g3xcluster.hierarchX(aesData,"IGNORE THIS MESSAGE", {}, width, margin.xcluster)
-      }
     
       // Do calculation for stacked bars.  Not sure how this gets called.
       if(position && position.x == "stack") { // is this X?
@@ -85,112 +72,14 @@
         }
       }
       
-      // Calculate the subset of axes/data for each y-facet (vertical 'small multiple')
-      var yFacetedData = g3figureDataUtils.facetData(aesData,"YFacet","Y");
+      // TODO: here we can also assign static color mappings for each 
+      // layer (doesn't have an entry in the layer yet)
       
-      // also split x, in order to calculate facet scales - per column
-      var xFacetedData = g3figureDataUtils.facetData(aesData,"XCluster","X")
+      // TODO: here we can allow x and y transforms such as *10 or *2.5 to allow
+      // unlike quantities to be appropriately scales for parallel representation
+      // (yes I know it's a poor idea but it's often requested)
       
-      // calculate unzoomed domains
-      // note that this domain calculation ignores any use of x0 or dx and might not get
-      // scales right for objects with those.
-      var xData = _.pluck(aesData,"X").concat(g3functional.pluralise(graph.extents && graph.extents.x))
-      if (aesthetic.DX)
-      xData = xData.concat(aesData.map(function(d){return +d.X+d.DX})) // assume right extend DX
-      var numerise = function(x){return _.map(x,function(x){return +x})}
-         
-      var xScale, yScale, color // layer xscale.  should probably make this a hash to allow arbitrary
-        
-      switch(scaleX) {
-        case "ordinal":
-          xScale = d3.scale.ordinal()
-            .domain(xData); // could use pluck here
-          break;
-        case "date":
-          xScale = d3.time.scale()
-            .domain(g3math.grow2(1.05,d3.extent(numerise(xData))))
-          break;
-        case "linear":
-          xScale = d3.scale.linear()
-            .domain(g3math.grow2(1.05,d3.extent(numerise(xData))))
-          break;
-        case "unit":
-          xScale = d3.scale.ordinal()
-            .domain(1) // need to update this later.
-          break;
-        default:
-          throw("Unknown scale type: \""+scaleX+"\"")
-          break;
-      }
-      
-      
-      // all the y's share a DOMAIN at the moment - 
-      // so build it here, once
-      switch (scaleY) {
-        case "log":
-          yScale = d3.scale.log()
-              // extent is over ALL layer data here - is that appropriate? not always.
-              .domain(d3.extent(aesData, function(d) { return d.Y; }))
-          break;
-        case "linear":
-          yScale = d3.scale.linear()
-           // temporarily suppress 0 inclusion
-              .domain(d3.extent(aesData, function(d) { return ((d.y0+d.y)||d.y); })).nice();
-        
-          break;  
-        default:
-          throw("Unknown y scale type: \""+scaleY+"\"")
-          break;
-      } 
-      
-      // TODO: manage Color and Fill as separate scales so both can be used.
-      var colorField=
-              _.chain(aesStructure)
-                .keys()
-                .intersection(["Color","Fill"])
-                .first().value()
-                
-      switch(colorField && graph.scales[colorField] || "ordinal") {
-        case "ordinal":
-          color = d3.scale.category20();
-          // Inject alpha sorted fields into color right now,
-          // to prevent color jitter when 'animating' between
-          // two sims for the same data.  Could be better.
-          // TODO: should probably NOT be in layer logic?
-          if (colorField=
-              _.chain(aesStructure)
-                .keys()
-                .intersection(["Color","Fill"])
-                .first().value())
-          {
-            if (plan.data.message.extents && plan.data.message.extents[colorField]) {
-              color.domain(plan.data.message.extents[colorField])
-            } else {
-              color.domain(_.unique(_.pluck(aesData,colorField)).sort())
-            }
-          }
-          break;
-        case "linear":
-          color = d3.scale.log()
-            .domain(d3.extent(aesData, function(d) { return +d[colorField] }))
-            .range(["red","yellow"]);
-          break;
-        default:
-          color = null;
-      }
-
-      // return the scales and data as calculated for one
-      // layer.  This will be combined with other layers
-      // later, since layer is the innermost data set (apart from
-      // geom)
-      // 
-      return {
-        xScale: xScale,
-        yScale: yScale,
-        color: color,
-        xFacetedData: xFacetedData,
-        yFacetedData: yFacetedData
-      }
+      return(aesData)
     }
  
     subfigure.setupData=function(subfigureElement, _plan, newDimensions){
@@ -231,7 +120,9 @@
       //aesData = plan.data.aesthetic,
       //aesStructure = plan.metaData.aestheticStructure;
       
-      var layerdata1 = _.map(plan.layers,subfigure.setupLayerData)
+      var postTransformLayers = _.map(plan.layers,subfigure.doLayerStats)
+      
+      var aesData = d3.merge(postTransformLayers)
       
       // convert the array of layer parameters to parameter arrays [{a:1},{a:2}] => {a:[1,2]}
       var twoargs=function(f){return function(x,y){return f(x,y)}}
