@@ -447,8 +447,8 @@ airquality_plot <- function(dataName) {
             name="Wind", 
             structure=list(Rownames="row",Measurements=selfList(c("Wind","Temp"))),
             aesthetic=list(Key="Rownames",XFilterKey="Rownames",
-                           X=list("Measurements","Temp")),
-            Y=list("Measurements","Wind"), 
+                           X=list("Measurements","Temp"),
+                           Y=list("Measurements","Wind")),
             geom=c("point")  # wanted to voronoi here BUT Wind:Temp has some duplicates which crash the algoritm.  need to perturb 
        )
      )
