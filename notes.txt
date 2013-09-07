@@ -1,4 +1,13 @@
-notes:
+Notes on adding layers:
+===========
+
+Warning notes:
+----------
+
+Keep it functional wherever possible by adding a normalise and letting it accept old style data.
+
+Message notes:
+----------
 
 Unusual fields:
 grid can come from ONE layer and ONE plot.  OR rather it's a 'separate' plot? referencing the other data? fie!
@@ -26,6 +35,19 @@ name is global AND local
 
 geom is local for sure
 
-Xcluster aesthetic has to be the SAME across all layers
+Architecture notes
+----------
 
+Consider simply welding all the layers together once we have transformed into aesthetic (and keeping a layer reference in the object for filtering, etc.)  Use nest to flip the structure in and out of shape.  This would make the rework a whole lot easier.  How would we handle geoms?  Would we be able to handle reloading easily?
+
+Aesthetic notes:
+-----------
+
+re-use of Color will be merged
+
+are Color and Fill separate?
+
+Xcluster aesthetic has to be the SAME across all layers - oh, but how do we calculate the partitions when there are multiple layers? TODO
+
+position is local
 
