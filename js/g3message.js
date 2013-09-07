@@ -9,24 +9,27 @@
   }
 
   // generate col major structured records - by 'layer'    
-  processLayer = function(message) {
+  processLayer = function(layer_message) {
 
-    var strData = aestheticUtils.decodeData(message);
+    var strData = aestheticUtils.decodeData(layer_message);
     
     // TODO: raise errors if the aes or structure is not satisfiable
 
     // create records with fields x,y,group from data
-    var aesData = strData.map(aestheticUtils.applyAesthetic(message.aesthetic))
+    var aesData = strData.map(aestheticUtils.applyAesthetic(layer_message.aesthetic))
     // derive effective structure of aesthetic
-    var aesStructure = aestheticUtils.applyAesthetic(message.aesthetic)(message.structure)
+    var aesStructure = aestheticUtils.applyAesthetic(layer_message.aesthetic)(layer_message.structure)
+    
+    // attach layer by reference to each node
+    _.forEach(aesData,function(a){a.layer=layer_message})
     
     return {error: undefined,
-            data: {message: message, // TODO: drop the message
+            data: {message: layer_message, // TODO: drop the message
                    structured: strData, // TODO: drop the strData
                    aesthetic: aesData
                    },
             metaData: {aestheticStructure: aesStructure},
-            name: message.name
+            name: layer_message.name
     }
   }
 
