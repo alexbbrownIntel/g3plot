@@ -130,8 +130,20 @@
       
       // Calculate the subset of axes/data for each y-facet (vertical 'small multiple')
       yFacetedData = g3figureDataUtils.facetData(aesData,"YFacet","Y");
+      // Calculate the X subfacets (aka cellFacets) of each Y facet
+      _.forEach(yFacetedData,function(yFacet){
+        yFacet.cellFacets = g3figureDataUtils.facetData(yFacet.values,"XCluster","X");
+        // calculate the Layers in each cellFacet
+        _.forEach(yFacet.cellFacets,function(cellFacet){
+          cellFacet.layerFacets = d3.nest().key(function(d) {
+            return d.layer.name; // TODO: check that all layers HAVE a name and are unique. 
+            })
+          .entries(cellFacet.values)
+        })
+      })
+
       
-      // also split x, in order to calculate facet scales - per column
+      // also split global dataset x, in order to calculate facet scales - per column
       xFacetedData = g3figureDataUtils.facetData(aesData,"XCluster","X")
     
       // calculate unzoomed domains
@@ -318,7 +330,7 @@
       })
       
       // configure each y facet, adding y-scales and axes
-      // also do x-faceting
+      // also do x-faceting to build cellfacets.
       _.map(yFacetedData,function(facet,i,allFacets){
   
         var countFacets = allFacets.length
@@ -343,7 +355,8 @@
         
         // Calculate the data for just this xFacet.  Note this is different
         // from xFacetedData which is for the whole 'column'.
-        facet.cellFacets = g3figureDataUtils.facetData(facet.values,"XCluster","X");
+        // TODO: should this split happen much earlier?
+//        facet.cellFacets = g3figureDataUtils.facetData(facet.values,"XCluster","X");
         
         // need to copy the master X facet data here for scales & friends
         var facetKeys = _.pluck(facet.cellFacets,"key")
