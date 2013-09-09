@@ -440,7 +440,8 @@ airquality_plot <- function(dataName) {
             aesthetic=list(Key="Rownames",XFilterKey="Rownames",
                            Y=list("Measurements","Temp"),
                            X=list("Measurements","Solar.R")),
-            geom=c("voronoi","point")
+            #geom=c("voronoi","point")
+            geom=I(c("point"))
        ),
        list(type="layer",
             data=forceTableVector(dataSet),
