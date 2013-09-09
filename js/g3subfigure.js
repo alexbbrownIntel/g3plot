@@ -41,7 +41,7 @@
         yFacet, // the y (row) facet selector
         xFacetAxis, // the x (column) facet UI selector (does not contain cellfacets)
         cellFacet, // the cell facet selector
-        dataPointSelector; // how to select all geoms.  This should be easier
+        dataPointSelector; // how to select all geoms.  This should be easier, layered and multi-geom
 
     // for each layer, perform any stats which are required.  After this, the layers
     // are combined into a single array.  Current stats are just barStack.
