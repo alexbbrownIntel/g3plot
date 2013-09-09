@@ -41,6 +41,7 @@
         yFacet, // the y (row) facet selector
         xFacetAxis, // the x (column) facet UI selector (does not contain cellfacets)
         cellFacet, // the cell facet selector
+        layerFacet, // the layer facet selector
         dataPointSelector; // how to select all geoms.  This should be easier, layered and multi-geom
 
     // for each layer, perform any stats which are required.  After this, the layers
@@ -561,7 +562,7 @@
         .attr("class","cell_facet")
         .call(positionCellFacet)
         // now create a rect background to the facet to catch events
-      
+
       //
       // Zoom
       //
@@ -569,6 +570,22 @@
       cellFacet
         .transition()
         .call(positionCellFacet)
+         
+      // (re)build layers - each cellFacet has multiple drawing layers
+      // with indepdendent data, aesthetics and geoms.
+      // note: not a VAR because we save it.
+      layerFacet = cellFacet
+        .selectAll("g.layer_facet")
+        .data(function(d){
+          return d.layerFacets
+        },function(d){
+          return d.key
+        })
+        
+      var newLayerFacet = layerFacet
+        .enter()
+        .append("g")
+        .attr("class","layer_facet") 
       
       if (graph.onZoom) {
         xFacetAxis
@@ -617,6 +634,11 @@
       // note that cellfacets don't get axes - those are handled
       // only once per vertical , in the master xaxis object
       
+      // Layers
+      layerFacet
+        .exit()
+        .remove() // perhaps a little aggressive  
+        
       cellFacet
         .exit()
         .transition()
@@ -792,80 +814,93 @@
     // redraw the currently displayed set of geoms.
     // fast indicates that the fast geom functions should be used that
     // do no transitions, joins, enters or exits and update only critical attributes
+    // Note that geoms are per layer.  this means the geom key is false now - since multiple
+    // layers could use identical geoms
     subfigure.redrawGeoms = function(fast) {
-      var geoms = _.isArray(graph.geom)?graph.geom:[graph.geom]
       
-      _.map(geoms, function(geom) {
-        switch(geom) {
+      layerFacet
+        .each(function(d,i){
+        
+        var layerFacet = d3.select(this)
+        
+        if (d.values.length == 0) return; // TODO: fix this so the layer name is in the layerfacet (or a link)
+        // otherwise length 0 geoms cannot delete themselves (but maybe they don't exist)
+        
+        var geoms = d.values[0].layer.geom
 
-        case "voronoi":
-          cellFacet
-            .each(function(d,i){
-              // note that for linear/linear plots voronoi points could be scaled later - 
-              // at the point of drawing, which would save multiple calculations.  However
-              // the same is not true of ordinal, since it's not clear that arbitrary 
-              // ordinal values are real.
-              g3stats.voronoi(d.values,d.xScale,d.yScale)
-            })
-          
-
-        case "point":
-        case "point_bar":
-        case "bar":
-        case "range_bar":
-        case "point_range_bar":
-
+        _.map(geoms, function(geom) {
+          switch(geom) {
   
-          var clickEvent;
-          if (graph.onBrush && graph.onBrush.x &&
-              graph.onBrush.x.drag && graph.onBrush.x.drag.input) {
-                  
-            var clickEventInner = 
-              g3events.updateShinyInputFromGeomFn(graph.onBrush.x.drag.input,
-              aesStructure.XFilterKey?"XFilterKey":"X")
-          
-            clickEvent = function(e) { 
-              clickEventInner(d3.event.target.__data__)
-              d3.event.stopPropagation(); //? no idea what this does
-            };
-          }
-          if (graph.onClick && graph.onClick.x &&
-              graph.onClick.x.input) {
-                  
-            var clickEventInner = 
-              g3events.updateShinyInputFromGeomFn(graph.onClick.x.input,
-                aesStructure.XFilterKey?"XFilterKey":"X")
-          
-            clickEvent = function(e) { 
-              clickEventInner(d3.event.target.__data__)
-              d3.event.stopPropagation(); //? no idea what this does
-            };
-          }
-          
+          case "voronoi":
+            layerFacet
+              .each(function(d,i){
+                // note that for linear/linear plots voronoi points could be scaled later - 
+                // at the point of drawing, which would save multiple calculations.  However
+                // the same is not true of ordinal, since it's not clear that arbitrary 
+                // ordinal values are real.
+                g3stats.voronoi(d.values,d.xScale,d.yScale)
+              })
             
-          if(!fast)
-            dataPointSelector = g3geoms[geom](cellFacet,function(d){return d.values},color,clickEvent)
-              .draw(cellFacet)
-          else
-            g3geoms[geom](cellFacet,function(d){return d.values},color,clickEvent)
-              .fast_redraw(cellFacet)
-            
-          break;
-        case "line": // different way to send values
-          if(!fast)
-            dataPointSelector = g3geoms[geom](cellFacet,function(d){return d3.nest().key(function(d){return d.Color}).entries(d.values)},color,clickEvent)
-              .draw(cellFacet)
-          else
-            g3geoms[geom](cellFacet,function(d){return [d.values]},color,clickEvent)
-              .fast_redraw(cellFacet)
-            
-          break;
+  
+          case "point":
+          case "point_bar":
+          case "bar":
+          case "range_bar":
+          case "point_range_bar":
+  
     
-        default:
-          throw({message:"Unknown geom=\""+geom+"\" in plot specification"})  
-        }
-      })
+            var clickEvent;
+            if (graph.onBrush && graph.onBrush.x &&
+                graph.onBrush.x.drag && graph.onBrush.x.drag.input) {
+                    
+              var clickEventInner = 
+                g3events.updateShinyInputFromGeomFn(graph.onBrush.x.drag.input,
+                aesStructure.XFilterKey?"XFilterKey":"X")
+            
+              clickEvent = function(e) { 
+                clickEventInner(d3.event.target.__data__)
+                d3.event.stopPropagation(); //? no idea what this does
+              };
+            }
+            if (graph.onClick && graph.onClick.x &&
+                graph.onClick.x.input) {
+                    
+              var clickEventInner = 
+                g3events.updateShinyInputFromGeomFn(graph.onClick.x.input,
+                  aesStructure.XFilterKey?"XFilterKey":"X")
+            
+              clickEvent = function(e) { 
+                clickEventInner(d3.event.target.__data__)
+                d3.event.stopPropagation(); //? no idea what this does
+              };
+            }
+            
+              
+            if(!fast)
+              dataPointSelector = g3geoms[geom](layerFacet,function(d){return d.values},color,clickEvent)
+                .draw(layerFacet)
+            else
+              g3geoms[geom](layerFacet,function(d){return d.values},color,clickEvent)
+                .fast_redraw(layerFacet)
+              
+            break;
+          case "line": // different way to send values
+            if(!fast)
+              dataPointSelector = g3geoms[geom](layerFacet,function(d){return d3.nest().key(function(d){return d.Color}).entries(d.values)},color,clickEvent)
+                .draw(layerFacet)
+            else
+              g3geoms[geom](layerFacet,function(d){return [d.values]},color,clickEvent)
+                .fast_redraw(layerFacet)
+              
+            break;
       
+          default:
+            throw({message:"Unknown geom=\""+geom+"\" in plot specification for layer XXX"})  
+          }
+        })
+
+        })
+
       return subfigure
     }
 
