@@ -293,9 +293,8 @@
           case "ordinal": { 
             // possible options here allow domain to be adjusted per x facet 
             // this code is a clone of code above in ordinal
-            var xData = _.pluck(facet.values,"X").concat(g3functional.pluralise(graph.extents && graph.extents.x))
-            if (graph.aesthetic.DX) // TODO: fixme somehow
-              xData = xData.concat(aesData.map(function(d){return +d.X+d.DX})) // assume right extend DX
+            var xData = facet.values.map(function(d){return +d.X+(d.DX?(+d.X+d.DX):0)}) // assume right extend DX
+            xData.concat(g3functional.pluralise(graph.extents && graph.extents.x))
             x.domain(xData)
             
             x.rangeBands([0,aValue.parent.dx]); 
