@@ -251,7 +251,7 @@ msleep_plot <- function(dataName,...) {
                       Key=list("Clade","Name")
                      # YFacet=list("Type")
        ),
-       labels=list(x="Clade", y="sleep_total"),
+       labels=list(x="Clade", y="sleep_total",Color="Eating habits"),
        geom="point_bar",
        scales=list(x="unit"),
        extents=list(y=0,Color=levels(msleep$vore)),
