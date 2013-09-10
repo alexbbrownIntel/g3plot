@@ -792,15 +792,17 @@
         
       // draw a legend if we have used any colors
       if (aestheticUtils.hasAesthetic(plan,"Color")) {
-        legendAesthetic = graph.aesthetic.Color?"Color":"Fill"
+        //var label = aesStructure.Color TODO: fixme
+        label = "Label FIXME"
         var legendPos = {x:width+5,y:0};
         var clickEvent = graph.onClick && graph.onClick.Color &&
-        // this will fail - TODO
-          function(d){g3figure.filter.update(d?_.object([aesStructure[legendAesthetic]],
+        // this will fail - TODO HACK : make it apply per layer
+          function(d){g3figure.filter.update(d?_.object([aesStructure.Color],
                                      [function(x){
                                        return x==d
                                      }]):{})}
-        g3legends.discrete_color(root,color,legendPos,aesStructure[legendAesthetic],
+        clickEvent = clickEvent || function(x){return false}
+        g3legends.discrete_color(root,color,legendPos,label,
           clickEvent,height,
           graph.position && graph.position.x == "stack" // invert color legend if stacked
           )
@@ -916,6 +918,8 @@
       
       // Return a handle to update this plot for filtering etc.
       plotHandle.update = function(filterSpec) {
+        // TODO: fix this to work with layers: HACK
+        return false;
             function negate(f) { return function(x){ return !f(x) } }
             var filterFn=aestheticUtils.filterFromFilterSpec(filterSpec,aesStructure)
 
