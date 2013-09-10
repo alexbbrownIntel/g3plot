@@ -62,6 +62,9 @@ renderG3Plot <- function(func)
           # data replaces the old 'table' name
           if (is.null(val$layers[[1]]$data)) val$layers[[1]]$data <- val$layers[[1]]$table 
         }
+        
+        # TODO: make sure all layers geoms are lists
+        
         val
       } else {
         val

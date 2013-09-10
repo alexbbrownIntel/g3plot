@@ -441,7 +441,7 @@ airquality_plot <- function(dataName) {
                            Y=list("Measurements","Temp"),
                            X=list("Measurements","Solar.R")),
             #geom=c("voronoi","point")
-            geom=I(c("point"))
+            geom=list("point")
        ),
        list(type="layer",
             data=forceTableVector(dataSet),
@@ -450,7 +450,7 @@ airquality_plot <- function(dataName) {
             aesthetic=list(Key="Rownames",XFilterKey="Rownames",
                            X=list("Measurements","Temp"),
                            Y=list("Measurements","Wind")),
-            geom=I(c("point"))  # wanted to voronoi here BUT Wind:Temp has some duplicates which crash the algoritm.  need to perturb 
+            geom=list("line")  # wanted to voronoi here BUT Wind:Temp has some duplicates which crash the algoritm.  need to perturb 
        )
      )
     )
