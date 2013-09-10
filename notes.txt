@@ -51,3 +51,28 @@ Xcluster aesthetic has to be the SAME across all layers - oh, but how do we calc
 
 position is local
 
+Legend Notes:
+---------
+
+Color is unified. (how will I do outline?)
+
+If two layers each have a different aesthetic mapping for color (ie the structural name differs), there are two challenges:
+
+0) Are there two legends or one?  two might be nice, but I have no mechanism right now 
+1) what's the legend label?  - Combining is best since we can override it?
+2) how does filtering work when they are clicked on?  Currently filtering consumes the structural name, which may differ
+
+Filter Notes:
+---------
+
+Filtering happens in various ways.  Let's start with
+
+Legend - click a color
+XCluster - click a partition
+
+Linking Notes:
+----------
+
+
+Popover Notes:
+---------
