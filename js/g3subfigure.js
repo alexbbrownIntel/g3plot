@@ -170,7 +170,7 @@
         graph.scales && graph.scales.y || "linear"
       
       var scaleColor = 
-        graph.scales && graph.scales.color || "ordinal"
+        graph.scales && graph.scales.Color || "ordinal"
            
       switch(scaleX) {
         case "ordinal":
