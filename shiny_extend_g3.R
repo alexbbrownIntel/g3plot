@@ -42,18 +42,30 @@ renderG3Plot <- function(func)
   reactive({
     #     Rprof(NULL)
     #     Rprof(append=F)
-    
     val <- func()
-    
+
     canoniseMessage = function(val) {
       if(val$type=="plot") {
         # TODO: process layers - but no need since forceTableVector is always done manually
-#        val$table=forceTableVector(val$table)
+        # val$table=forceTableVector(val$table)
+        # todo: check all the aesthetics are mappable.
+        if (is.null(val$layers)) {
+          # update to layers       
+          props_to_move <- c("layer","table","structure","aesthetic","geom")
+          props_to_copy <- c("name")
+          val$layers <- list()
+          val$layers[1] <- list(val[c(props_to_move,props_to_copy)])
+          val[props_to_move] <- NULL
+
+          # make sure geom is a list
+          val$layers[[1]]$geom=as.list(val$layers[[1]]$geom)
+          # data replaces the old 'table' name
+          if (is.null(val$layers[[1]]$data)) val$layers[[1]]$data <- val$layers[[1]]$table 
+        }
         val
       } else {
         val
       }
-      # todo: check all the aesthetics are mappable.
     }
     
     # should strip out unused aes before sending, and check all aes are present,
