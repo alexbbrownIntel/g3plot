@@ -232,7 +232,7 @@
         //        .keys()
         //        .intersection(["Color","Fill"])
         //        .first().value())
-          if (aestheticUtils.hasAesthetic("Color"))
+          if (aestheticUtils.hasAesthetic(plan,"Color"))
           {
             if (plan.data.message.extents && plan.data.message.extents.Color) {
               color.domain(plan.data.message.extents.Color)
