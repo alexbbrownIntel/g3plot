@@ -7,12 +7,14 @@
 
   var parentD=function(n,old){return old && n.parentNode.__data_old__ ? n.parentNode.__data_old__ : n.parentNode.__data__}
   var parentD2=function(n){return n.parentNode.parentNode.__data__}
+  var parentD3=function(n){return n.parentNode.parentNode.parentNode.__data__}
 
-  // Get the parent's scale property
-  var xFacetScale=function(n,old){return parentD(n,old).xScale}
-  var yFacetScale=function(n,old){return parentD(n).yScale}
+
+  // Get the parent cellfacet's scale property
+  var xFacetScale=function(n,old){return parentD2(n,old).xScale}
+  var yFacetScale=function(n,old){return parentD2(n).yScale}
  
-  var yFacetScale=function(n){return parentD2(n).yScale}
+  var yFacetScale=function(n){return parentD3(n).yScale}
   // NB: this keyfunction should return a unique key, which means x|color should be unique.
   // If not, then the code can fail.  Current hierarchy implementation does generate a unique
   // X for each, but that will probably change, since the innermost X should probably be
