@@ -120,8 +120,8 @@
         // Build the data struture for the hierarchical x-scale/X-axis.
         // It would be nice if this were a real d3 axis type, but that would require
         // nested heterogenous axis with variable size rangebands.  Not possible today
-        partitionedNodes = g3xcluster.hierarchX(aesData,plan.layers[0].aesthetic.XCluster, 
-                                                plan.layers[0].metadata.aestheticStructure.XCluster, width, margin.xcluster)
+        partitionedNodes = g3xcluster.hierarchX(aesData,graph.layers[0].aesthetic.XCluster, 
+                                                plan.layers[0].metaData.aestheticStructure.XCluster, width, margin.xcluster)
       } else {
         // do it anyway, with no data, for uniformity   
         partitionedNodes = g3xcluster.hierarchX(aesData,"IGNORE THIS MESSAGE", {}, width, margin.xcluster)
@@ -664,7 +664,7 @@
         var clickEvent = 
           graph.onClick && graph.onClick.XCluster &&
           g3events.updateShinyInputFromHierFn(graph.onClick.XCluster.input,
-                                              aesStructure["XCluster"])
+                                              plan.layers[0].metaData.aestheticStructure["XCluster"])
           
         g3xcluster.hierAxis(root,partitionedNodes,height+margin.bottom-margin.xcluster,width,margin.xcluster,clickEvent,graph.format&&graph.format.XCluster)
       }
