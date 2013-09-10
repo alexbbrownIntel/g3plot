@@ -323,7 +323,7 @@
     geom.position = function(d) {
       d
         .attr("x", function(d) { 
-          var x=xFacetScale(this)(d.X)
+          var x=xFacetScale(this)(d.x)
           return xFacetScale(this).rangeBand() > x_pad_minimum ? x + x_padding : x
         })
         .attr("width", function(d) { 
