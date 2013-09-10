@@ -152,7 +152,7 @@
       // scales right for objects with those.
       var xData = _.pluck(aesData,"X").concat(g3functional.pluralise(graph.extents && graph.extents.x))
       if (aestheticUtils.hasAesthetic(plan,"DX"))
-        xData = xData.concat(aesData.map(function(d){return +d.X+d.DX?d.DX:0})) // assume right extend DX
+        xData = xData.concat(aesData.map(function(d){return +d.DX?+d.X+d.DX:+d.X})) // assume right extend DX
   
       var numerise = function(x){return _.map(x,function(x){return +x})}
             
@@ -293,8 +293,10 @@
           case "ordinal": { 
             // possible options here allow domain to be adjusted per x facet 
             // this code is a clone of code above in ordinal
-            var xData = facet.values.map(function(d){return +d.X+(d.DX?(+d.X+d.DX):0)}) // assume right extend DX
-            xData.concat(g3functional.pluralise(graph.extents && graph.extents.x))
+            var xData = _.pluck(aesData,"X").concat(g3functional.pluralise(graph.extents && graph.extents.x))
+            if (aestheticUtils.hasAesthetic(plan,"DX"))
+              xData = xData.concat(aesData.map(function(d){return +d.DX?+d.X+d.DX:+d.X})) // assume right extend DX
+                        
             x.domain(xData)
             
             x.rangeBands([0,aValue.parent.dx]); 
