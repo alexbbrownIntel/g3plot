@@ -80,8 +80,8 @@
       }
     })
     // return the length of the olength of the first aesthetic (or 1 for atomics or objects)
-    return _.isObject(aesthetics[1]) ?
-      _.keys(aesthetics[1]).length : !_.isUndefined(aesthetics[1])
+    return _.isObject(aesthetics[0]) ?
+      _.keys(aesthetics[0]).length : !_.isUndefined(aesthetics[0])
   }
 
 })(typeof exports === 'undefined'? this['aestheticUtils']={}: exports);
