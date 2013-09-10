@@ -221,34 +221,33 @@
           break;
       }
       
-      if(aestheticUtils.hasAesthetic(plan,"Color")) {
-        switch(graph.scales.color) {
-          case "ordinal":
-            color = d3.scale.category20();
-            // Inject alpha sorted fields into color right now,
-            // to prevent color jitter when 'animating' between
-            // two sims for the same data.  Could be better.
-            if (colorField=
-                _.chain(aesStructure)
-                  .keys()
-                  .intersection(["Color","Fill"])
-                  .first().value())
-            {
-              if (plan.data.message.extents && plan.data.message.extents[colorField]) {
-                color.domain(plan.data.message.extents[colorField])
-              } else {
-                color.domain(_.unique(_.pluck(aesData,colorField)).sort())
-              }
+      switch(scaleColor) {
+        case "ordinal":
+          color = d3.scale.category20();
+          // Inject alpha sorted fields into color right now,
+          // to prevent color jitter when 'animating' between
+          // two sims for the same data.  Could be better.
+        //  if (colorField=
+        //      _.chain(aesStructure)
+        //        .keys()
+        //        .intersection(["Color","Fill"])
+        //        .first().value())
+          if (aestheticUtils.hasAesthetic("Color"))
+          {
+            if (plan.data.message.extents && plan.data.message.extents.Color) {
+              color.domain(plan.data.message.extents.Color)
+            } else {
+              color.domain(_.unique(_.pluck(aesData,"Color")).sort())
             }
-            break;
-          case "linear":
-            color = d3.scale.log()
-              .domain(d3.extent(aesData, function(d) { return +d[colorField] }))
-              .range(["red","yellow"]);
-            break;
-          default:
-            color = null;
-        }
+          }
+          break;
+        case "linear":
+          color = d3.scale.log()
+            .domain(d3.extent(aesData, function(d) { return +d.Color }))
+            .range(["red","yellow"]);
+          break;
+        default:
+          color = null;
       }
 
       xScale_current = xScale_master.copy()
