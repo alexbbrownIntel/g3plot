@@ -792,8 +792,8 @@
         
       // draw a legend if we have used any colors
       if (aestheticUtils.hasAesthetic(plan,"Color")) {
-        //var label = aesStructure.Color TODO: fixme
-        label = "Label FIXME"
+        //var label = aesStructure.Color TODO: fixme - get labels from all layers, collapse compound structure ids.
+        label = graph.labels && graph.labels.Color || plan.layers[0].metaData.aestheticStructure.Color
         var legendPos = {x:width+5,y:0};
         var clickEvent = graph.onClick && graph.onClick.Color &&
         // this will fail - TODO HACK : make it apply per layer
