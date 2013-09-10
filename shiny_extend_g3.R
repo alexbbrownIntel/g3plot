@@ -78,6 +78,12 @@ renderG3Plot <- function(func)
         canoniseMessage(val) 
       })
     } else {
+      if(val$type == "report") {
+        val$data=lapply(Filter(Negate(is.null),val$data),function(val) {
+          canoniseMessage(val) 
+        })
+        sendData <- val
+      }
       sendData <- canoniseMessage(val)
     }
     
