@@ -51,7 +51,7 @@ renderG3Plot <- function(func)
         # todo: check all the aesthetics are mappable.
         if (is.null(val$layers)) {
           # update to layers       
-          props_to_move <- c("layer","table","structure","aesthetic","geom")
+          props_to_move <- c("layer","table","structure","aesthetic","geom","position")
           props_to_copy <- c("name")
           val$layers <- list()
           val$layers[1] <- list(val[c(props_to_move,props_to_copy)])
