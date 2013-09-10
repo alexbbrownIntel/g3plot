@@ -106,10 +106,8 @@
       //strData = plan.data.structured,
       //aesData = plan.data.aesthetic,
       //aesStructure = plan.metaData.aestheticStructure;
-      
-      var postTransformLayers = _.map(plan.layers,subfigure.doLayerStats)
-      
-      var aesData = d3.merge(postTransformLayers)
+            
+      var aesData = d3.merge(_.pluck(_.pluck(plan.layers,"data"),"aesthetic"))
       
       // Setup axes
       
@@ -128,6 +126,8 @@
         // do it anyway, with no data, for uniformity   
         partitionedNodes = g3xcluster.hierarchX(aesData,"IGNORE THIS MESSAGE", {}, width, margin.xcluster)
       }
+      
+      var postTransformLayers = _.map(plan.layers,subfigure.doLayerStats)
       
       // Calculate the subset of axes/data for each y-facet (vertical 'small multiple')
       yFacetedData = g3figureDataUtils.facetData(aesData,"YFacet","Y");
