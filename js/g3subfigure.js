@@ -792,11 +792,12 @@
         
       // draw a legend if we have used any colors
       if (aestheticUtils.hasAesthetic(plan,"Color")) {
-        //var label = aesStructure.Color TODO: fixme - get labels from all layers, collapse compound structure ids.
-        label = graph.labels && graph.labels.Color || plan.layers[0].metaData.aestheticStructure.Color
+        // TODO: allow filtering to read from any layer
+        var aesStructure = plan.layers[0].metaData.aestheticStructure
+        // TODO: fixme - get labels from all layers, collapse compound structure ids.
+        var label = graph.labels && graph.labels.Color || aesStructure.Color
         var legendPos = {x:width+5,y:0};
         var clickEvent = graph.onClick && graph.onClick.Color &&
-        // this will fail - TODO HACK : make it apply per layer
           function(d){g3figure.filter.update(d?_.object([aesStructure.Color],
                                      [function(x){
                                        return x==d
