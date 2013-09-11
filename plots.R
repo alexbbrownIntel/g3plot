@@ -422,56 +422,47 @@ DNase_plot <- function(dataName) {
   );
 }
 
-airquality_layer_plot <- function(dataName) {
-  dataSet <- get(dataName)
-  dataSet$row = rownames(dataSet)
-  list(
-    list(type="plot",
-     labels=list(y="Temp",x="Solar Radiation / Wind"),
-     onZoom=T,
-     scales=list(x="linear",y="linear"),
-     name=paste0(dataName,"_AQ"),
-     onBrush=list(x=list(drag=list(filter=TRUE))),
-     layers=list(
-       list(type="layer",
-            name="Solar",
-            data=forceTableVector(dataSet),
-            structure=list(Rownames="row",Measurements=selfList(c("Temp","Solar.R"))),
-            aesthetic=list(Key="Rownames",XFilterKey="Rownames",
-                           Y=list("Measurements","Temp"),
-                           X=list("Measurements","Solar.R")),
-            #geom=c("voronoi","point")
-            geom=list("point")
-       ),
-       list(type="layer",
-            data=forceTableVector(dataSet),
-            name="Wind", 
-            structure=list(Rownames="row",Measurements=selfList(c("Wind","Temp"))),
-            aesthetic=list(Key="Rownames",XFilterKey="Rownames",
-                           X=list("Measurements","Temp"),
-                           Y=list("Measurements","Wind")),
-            geom=list("line")  # wanted to voronoi here BUT Wind:Temp has some duplicates which crash the algoritm.  need to perturb 
-       )
-     )
-    )
-  )
-}
-
 airquality_plot <- function(dataName) {
+  
+  if(!require(mgcv)) stop("Required packages mgcv not available")
+
+  # build a humped model of air quality
+  gairq <- gam(Temp~s(Solar.R),data=airquality)
+  nSolar.R <- pretty(airquality$Solar.R,n=50)
+  # note that JSON chokes on arrays, so convert predict output to a vector
+  model_frame <- data.frame(Solar.R=nSolar.R,Temp=as.vector(predict(gairq,data.frame(Solar.R=nSolar.R))))
+
+  
   dataSet <- get(dataName)
   dataSet$row = rownames(dataSet)
   list(
     list(type="plot",
-         table=forceTableVector(dataSet),
-         name=paste0(dataName,"_AQ"),
-         structure=list(Rownames="row",Measurements=selfList(c("Temp","Solar.R"))),
-         aesthetic=list(Key="Rownames",XFilterKey="Rownames",Y=list("Measurements","Temp"), X=list("Measurements","Solar.R")),
-         #labels=list(x=field, y="Count"),
-         geom=c("voronoi","point"),
-         onBrush=list(x=list(drag=list(filter=TRUE))),
+         labels=list(y="Temp",x="Solar Radiation / Wind"),
+         onZoom=T,
          scales=list(x="linear",y="linear"),
-         labels=list(y="Temp",x="Solar Radiation"),
-         onZoom=T
+         name=paste0(dataName,"_AQ"),
+         onBrush=list(x=list(drag=list(filter=TRUE))),
+         layers=list(
+           list(type="layer",
+                name="Solar",
+                data=forceTableVector(dataSet),
+                structure=list(Rownames="row",Measurements=selfList(c("Temp","Solar.R"))),
+                aesthetic=list(Key="Rownames",XFilterKey="Rownames",
+                               Y=list("Measurements","Temp"),
+                               X=list("Measurements","Solar.R")),
+                geom=c("voronoi","point")
+                #geom=list("point")
+           ),
+           list(type="layer",
+                name="Solar_Model",
+                data=forceTableVector(model_frame),
+                structure=list(Measurements=selfList(c("Temp","Solar.R"))),
+                aesthetic=list(Y=list("Measurements","Temp"),
+                               X=list("Measurements","Solar.R")),
+                #geom=c("voronoi","point")
+                geom=list("line")
+           )
+         )
     ),
     list(type="plot",
          table=forceTableVector(dataSet),
