@@ -585,7 +585,9 @@
       var newLayerFacet = layerFacet
         .enter()
         .append("g")
-        .attr("class","layer_facet") 
+        .attr("class",function(d){
+          return(["layer_facet","layer_name_"+d.key])
+        })
       
       if (graph.onZoom) {
         xFacetAxis
