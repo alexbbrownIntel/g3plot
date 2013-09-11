@@ -586,7 +586,8 @@
         .enter()
         .append("g")
         .attr("class",function(d){
-          return(["layer_facet","layer_name_"+d.key])
+          return("layer_facet")
+          //return(["layer_facet","layer_name_"+d.key]) // Remove this for now, it breaks "exit"
         })
       
       if (graph.onZoom) {
