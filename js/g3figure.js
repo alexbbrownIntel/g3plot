@@ -163,18 +163,21 @@
         g3figure.filter.addWidget(d.subfigure.filterHandle());
       })
     
-    if(plans.length == 0 || plans[plans.length-1].data.message.grid == null){ 
+    // find first layer with grid
+    var grid_layers = _.chain(plans).pluck("layers").flatten(true).filter(function(layer){return !_.isUndefined(layer.data.message.grid)}).value()
+    
+    
+    if(grid_layers.length==0){ 
       // need to remove the table
       d3.select(el).select(".d3Table").select("table").remove()
       // and turn off the filters.  um, why?
       //exports.filter.clear()
     } else {
-      // It should mean - draw a table for each subFigure that wants one.  But I only
-      // know how to draw one table at the moment so only the last one that wants one
+      // It should mean - draw a table for each subfigure and layer that wants one.  But I only
+      // know how to draw one table at the moment so only the last layer that wants one
       // right now it does 'if the last plan wants a table' do it.
-      if(plans[plans.length-1].data.message.grid != null) {
-        exports.filter.addWidget(g3figure.table(d3.select(el).select(".d3Table"),plans[plans.length-1])); 
-      }
+      var grid_layer=_.last(grid_layers)
+      exports.filter.addWidget(g3figure.table(d3.select(el).select(".d3Table"),grid_layer)); 
     }
   }
 
