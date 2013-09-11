@@ -923,7 +923,7 @@
         return false;
             function negate(f) { return function(x){ return !f(x) } }
             var filterFn=aestheticUtils.filterFromFilterSpec(filterSpec,aesStructure)
-
+            // TODO: dataPointSelector is not appropriate when multiple layers and geoms exist.  Fix somehow
             el.select("g.plot").selectAll(dataPointSelector)
             .style("opacity",function(d) { return filterFn(d)?1.0:0.2})
       }
