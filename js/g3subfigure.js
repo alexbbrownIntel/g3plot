@@ -841,7 +841,7 @@
                 // at the point of drawing, which would save multiple calculations.  However
                 // the same is not true of ordinal, since it's not clear that arbitrary 
                 // ordinal values are real.
-                g3stats.voronoi(d.values,d.xScale,d.yScale)
+                g3stats.voronoi(d.values,this.parentNode.__data__.xScale,this.parentNode.__data__.yScale)
               })
             
   
