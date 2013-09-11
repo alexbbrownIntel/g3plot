@@ -422,7 +422,7 @@ DNase_plot <- function(dataName) {
   );
 }
 
-airquality_plot <- function(dataName) {
+airquality_layer_plot <- function(dataName) {
   dataSet <- get(dataName)
   dataSet$row = rownames(dataSet)
   list(
@@ -453,6 +453,39 @@ airquality_plot <- function(dataName) {
             geom=list("line")  # wanted to voronoi here BUT Wind:Temp has some duplicates which crash the algoritm.  need to perturb 
        )
      )
+    )
+  )
+}
+
+airquality_plot <- function(dataName) {
+  dataSet <- get(dataName)
+  dataSet$row = rownames(dataSet)
+  list(
+    list(type="plot",
+         table=forceTableVector(dataSet),
+         name=paste0(dataName,"_AQ"),
+         structure=list(Rownames="row",Measurements=selfList(c("Temp","Solar.R"))),
+         aesthetic=list(Key="Rownames",XFilterKey="Rownames",Y=list("Measurements","Temp"), X=list("Measurements","Solar.R")),
+         #labels=list(x=field, y="Count"),
+         geom=c("voronoi","point"),
+         onBrush=list(x=list(drag=list(filter=TRUE))),
+         scales=list(x="linear",y="linear"),
+         labels=list(y="Temp",x="Solar Radiation"),
+         onZoom=T
+    ),
+    list(type="plot",
+         table=forceTableVector(dataSet),
+         name=dataName,
+         structure=list(Rownames="row",Measurements=selfList(c("Wind","Temp"))),
+         aesthetic=list(Key="Rownames",XFilterKey="Rownames",X=list("Measurements","Wind"), Y=list("Measurements","Temp")),
+         #labels=list(x=field, y="Count"),
+         geom=c("point"),  # wanted to voronoi here BUT Wind:Temp has some duplicates which crash the algoritm.  need to perterb 
+         onBrush=list(x=list(drag=list(filter=TRUE))),
+         scales=list(x="linear",y="linear"),
+         labels=list(x="Wind",y="Temp"),
+         grid=list(Wind=list("Measurements","Wind"),
+                   Temp=list("Measurements","Temp")),
+         onZoom=T
     )
   )
 }
