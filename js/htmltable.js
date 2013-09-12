@@ -107,6 +107,7 @@
   //   the data key to sort by (in data space, not str or aes space) 
   exports.flatStructuredTable = function(tableNode, tableData, sortRowKey) {
       
+    // TODO: place this and other things below in 'functional' (or a new structure file)
     objectSlice=function(object,fields) {
       return _.map(fields,function(k){
         return object[k]
