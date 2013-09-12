@@ -11,10 +11,14 @@
   // generate col major structured records - by 'layer'    
   processLayer = function(layer_message) {
 
+    // TODO: don't handle dates like this - handle them by SCALES instead.
+    if(layer_message.data.timestamp)
+      layer_message.data.timestamp = layer_message.data.timestamp.map(function(x){return new Date(+x)})
+
     var strData = aestheticUtils.decodeData(layer_message);
     
     // TODO: raise errors if the aes or structure is not satisfiable
-
+    
     // create records with fields x,y,group from data
     var aesData = strData.map(aestheticUtils.applyAesthetic(layer_message.aesthetic))
     // derive effective structure of aesthetic
@@ -52,10 +56,6 @@
     // ... and others
         
     var message = g3message.validate(naive_message)
-      
-    // TODO: don't handle dates like this - handle them by SCALES instead.
-    //if(message.table.timestamp)
-    //  message.table.timestamp = message.table.timestamp.map(function(x){return new Date(+x)})
     
     var layers = _.map(message.layers,processLayer)
     
