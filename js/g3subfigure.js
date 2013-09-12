@@ -899,19 +899,21 @@
               };
             }
 
+            if(!fast)
+              dataPointSelector = g3geoms[geom](layerFacet,function(d){return d.values},color,clickEvent)
+                .draw(layerFacet)
+            else
+              g3geoms[geom](layerFacet,function(d){return d.values},color,clickEvent)
+                .fast_redraw(layerFacet)
+
+            break;
+
           case "area": // different way to send values
             if(!fast)
               dataPointSelector = g3geoms[geom](layerFacet,function(d){return d3.nest().key(function(d){return d.Color}).entries(d.values)},color,clickEvent)
                 .draw(layerFacet)
             else
               g3geoms[geom](layerFacet,function(d){return [d.values]},color,clickEvent)
-                .fast_redraw(layerFacet)
-              
-            if(!fast)
-              dataPointSelector = g3geoms[geom](layerFacet,function(d){return d.values},color,clickEvent)
-                .draw(layerFacet)
-            else
-              g3geoms[geom](layerFacet,function(d){return d.values},color,clickEvent)
                 .fast_redraw(layerFacet)
               
             break;
