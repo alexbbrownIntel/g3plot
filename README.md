@@ -11,6 +11,8 @@ Includes interactive features such as click and drag.
 
 Add Shiny inputs to the app to control graph filtering and more.
 
+Now supports layers
+
 Licence
 -------
 
@@ -106,7 +108,7 @@ Fun improvements:
 Some ideas to develop the product
  
  * Sparklines - providing a very simple 3-layer structure without faceting
- * Layers - multiple geoms on top of each other (another layer!)
+ * Layers - multiple geoms on top of each other (another layer!) (now implemented)
  * g3autoplot - looks at data and does something sensible, then tells you how to repeat / customise it
 
 
