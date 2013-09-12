@@ -87,5 +87,4 @@ Popover Notes:
 Other Bugs:
 -----
 Geom Clicking not tested yet
-Brush + Pan has regressed (is this a d3 or browser issue, or my code?)
 DatapointSelector is clearly wrong - should only be for 'master' layer - or for all layers separately.

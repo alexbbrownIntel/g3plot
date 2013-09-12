@@ -591,6 +591,7 @@
       
       if (graph.onZoom) {
         xFacetAxis
+          .select(".zoom_layer")
           .each(function(d,i) {
             var zoom = d3.behavior
               .zoom()
