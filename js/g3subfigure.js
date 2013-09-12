@@ -834,6 +834,7 @@
         // otherwise length 0 geoms cannot delete themselves (but maybe they don't exist)
         
         var geoms = d.values[0].layer.geom
+        var aesthetic = d.values[0].layer.aesthetic
 
         _.map(geoms, function(geom) {
           switch(geom) {
@@ -862,7 +863,7 @@
                     
               var clickEventInner = 
                 g3events.updateShinyInputFromGeomFn(graph.onBrush.x.drag.input,
-                aesStructure.XFilterKey?"XFilterKey":"X")
+                aesthetic.XFilterKey?"XFilterKey":"X")
             
               clickEvent = function(e) { 
                 clickEventInner(d3.event.target.__data__)
@@ -874,7 +875,7 @@
                     
               var clickEventInner = 
                 g3events.updateShinyInputFromGeomFn(graph.onClick.x.input,
-                  aesStructure.XFilterKey?"XFilterKey":"X")
+                  aesthetic.XFilterKey?"XFilterKey":"X")
             
               clickEvent = function(e) { 
                 clickEventInner(d3.event.target.__data__)
