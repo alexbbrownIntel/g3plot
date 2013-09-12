@@ -371,9 +371,6 @@
       
     headkeys.enter()
       .insert("th","th.value th.info") // keys go before values and info
-      .insert("th","th.value,th.info") // keys go before values and info
-      .insert("td","td.info td.value") // keyCells go before values
-      .insert("td","td.info,td.value") // keyCells go before values
       .attr("class","key")
       
     headkeys.order()
