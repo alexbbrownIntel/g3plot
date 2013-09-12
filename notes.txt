@@ -70,9 +70,22 @@ Filtering happens in various ways.  Let's start with
 Legend - click a color
 XCluster - click a partition
 
+filtering works (just on master layer)
+
 Linking Notes:
 ----------
+Clicking and brushing need to work before filters do - filters are largely gimmicky.
 
+now work - just on 'master' (first) layer
+
+Clicking may not work
 
 Popover Notes:
 ---------
+
+
+Other Bugs:
+-----
+Geom Clicking not tested yet
+Brush + Pan has regressed (is this a d3 or browser issue, or my code?)
+DatapointSelector is clearly wrong - should only be for 'master' layer - or for all layers separately.

@@ -31,9 +31,8 @@
         color, // the color scale
         // transformed versions of the data
         partitionedNodes, // the partitioned node data (at what level?)
-        strData,
-        aesData,
-        aesStructure, // aes map applied to structure map gives aes -> data_frame names
+        master_layer_index, // the layer which controls faceting, brushing and filtering (only one for now)
+        master_layer, // the plan for the master layer
         // some information about the current geoms - for filtering
         yFacetedData, // the faceted data subsets - y (by row, not cell)
         xFacetedData, // facets for x (by column, not cell)
@@ -102,12 +101,12 @@
       
       // don't choose colorfield yet since it's layer dependent and HAS the SAME SCALE (probably)
       
-      // These don't exist yet.
-      //strData = plan.data.structured,
-      //aesData = plan.data.aesthetic,
-      //aesStructure = plan.metaData.aestheticStructure;
-            
+      // extract data from all layers
       var aesData = d3.merge(_.pluck(_.pluck(plan.layers,"data"),"aesthetic"))
+      
+      // hang on to the master layer for filtering, clustering etc.
+      master_layer_index = 0
+      master_layer = plan.layers[master_layer_index]
       
       // Setup axes
       
@@ -120,8 +119,8 @@
         // Build the data struture for the hierarchical x-scale/X-axis.
         // It would be nice if this were a real d3 axis type, but that would require
         // nested heterogenous axis with variable size rangebands.  Not possible today
-        partitionedNodes = g3xcluster.hierarchX(aesData,graph.layers[0].aesthetic.XCluster, 
-                                                plan.layers[0].metaData.aestheticStructure.XCluster, width, margin.xcluster)
+        partitionedNodes = g3xcluster.hierarchX(aesData,graph.layers[master_layer_index].aesthetic.XCluster, 
+                                                master_layer.metaData.aestheticStructure.XCluster, width, margin.xcluster)
       } else {
         // do it anyway, with no data, for uniformity   
         partitionedNodes = g3xcluster.hierarchX(aesData,"IGNORE THIS MESSAGE", {}, width, margin.xcluster)
@@ -617,8 +616,9 @@
             // what do we do?  It has lots of arguments because it was refactored
             // should fix.
             d.brush =
-              g3brush.brush(d3.select(this), graph, aesStructure, 
-                            aesData, // should we really supply all the data? or just the facet's?
+              g3brush.brush(d3.select(this), graph, 
+                            master_layer.metaData.aestheticStructure, 
+                            master_layer.data.aesthetic, // should we really supply all the data? or just the facet's?
                             d.xScale,
                             height, 
                             scaleX)   
@@ -796,7 +796,7 @@
       // draw a legend if we have used any colors
       if (aestheticUtils.hasAesthetic(plan,"Color")) {
         // TODO: allow filtering to read from any layer
-        var aesStructure = plan.layers[0].metaData.aestheticStructure
+        var aesStructure = master_layer.metaData.aestheticStructure
         // TODO: fixme - get labels from all layers, collapse compound structure ids.
         var label = graph.labels && graph.labels.Color || aesStructure.Color
         var legendPos = {x:width+5,y:0};
@@ -921,12 +921,9 @@
         })()
       
       // Return a handle to update this plot for filtering etc.
-      plotHandle.update = function(filterSpec) {
-        // TODO: fix this to work with layers: HACK
-        return false;
-            function negate(f) { return function(x){ return !f(x) } }
-            var filterFn=aestheticUtils.filterFromFilterSpec(filterSpec,aesStructure)
-            // TODO: dataPointSelector is not appropriate when multiple layers and geoms exist.  Fix somehow
+      plotHandle.update = function(filterSpec) {        
+            var filterFn=aestheticUtils.filterFromFilterSpec(filterSpec,master_layer.metaData.aestheticStructure)
+            // TODO: dataPointSelector is not appropriate when multiple layers and geoms exist.  Fix somehow to use
             el.select("g.plot").selectAll(dataPointSelector)
             .style("opacity",function(d) { return filterFn(d)?1.0:0.2})
       }
