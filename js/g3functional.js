@@ -9,6 +9,8 @@
     return function repeatedly() { return v[i=(1+i)%l] }
   }
   
+  exports.negate = function negate(f) { return function(x){ return !f(x) } }
+  
   // using an arbitrary accessor as the next pointer, return the list thus formed from the input node
   exports.followChain=function(accessor){
     var followChainAccessor = function(node) {    
