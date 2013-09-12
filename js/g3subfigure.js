@@ -542,7 +542,7 @@
       
         if (d3.event.sourceEvent.type=="mousewheel") {
           // this case is bad for touch based zooming - it starts to shrink it while the user is still 
-          var isTouch = true
+          var isTouch = false
           if (isTouch)
             d3.select(window).on("mousemove.zoomadjust",_.once(zoomAdjust.call(this,d3.event).adjust))
           else
