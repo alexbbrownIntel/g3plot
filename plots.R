@@ -521,9 +521,10 @@ AirPassengers_plot <- function(dataName) {
        table=forceTableVector(dataSet2),
        structure=selfList(names(dataSet2)),
        aesthetic=list(X="date",Y="passengers"),
-       geom="line",
+       geom="area",
        labels=list(x="Date",y="Passenger count"),
        scales=list(x="date"),
+       extents=list(y=0), 
        onZoom=T
   ),
   list(type="plot",
