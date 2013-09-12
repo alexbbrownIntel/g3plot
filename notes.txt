@@ -88,3 +88,4 @@ Other Bugs:
 -----
 Geom Clicking not tested yet
 DatapointSelector is clearly wrong - should only be for 'master' layer - or for all layers separately.
+There's a stray NA in layer
