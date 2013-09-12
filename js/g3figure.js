@@ -264,8 +264,11 @@
   }  
   
   // filter is a per-plot (possibly global) filter collection that
-  // sends filter messages amongst graphs.  Should rebuild to use
-  // d3.dispatch (but what about new graphs - how do they get filters?)
+  // sends filter messages amongst graphs.  
+  
+  // TODO: Should rebuild to use either:
+  // * d3.dispatch (but what about new graphs - how do they get filters?)
+  // * just using css selectors to find filterable things, then invoke update on them?
   exports.filter = function() {
     exports.filter.widgets = []
     exports.filter.unfilter = function() {
