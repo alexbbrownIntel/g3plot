@@ -91,3 +91,4 @@ DatapointSelector is clearly wrong - should only be for 'master' layer - or for 
 There's a stray NA in layer
 Area should base at zero perhaps?  or call it something other than area - such as fill
 Layers should be KEYED for animation purposes
+bar (rangeband) should be available with linear scales, too.
