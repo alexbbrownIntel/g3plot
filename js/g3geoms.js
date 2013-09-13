@@ -347,7 +347,7 @@
   
       a
      //   .transition()
-        .style("stroke",function(d){return color(d.key)})
+        .style("stroke",function(d){return color(d.Color)})
         .attr("d", function(d){return geom.position.call(this,d3.svg.line()).call(this,d.values)})
   
       a.exit()

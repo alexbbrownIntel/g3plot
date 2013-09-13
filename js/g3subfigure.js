@@ -926,9 +926,9 @@
             if(!fast)
               dataPointSelector = g3geoms[geom](layerFacet,function(d){
                 return _.map(d3.nest().key(function(d) {
-                                        return d.Color
+                                        return d.Group || d.Color
                                     }).entries(d.values),function(c) {
-                                        c.Color = c.key; return c;
+                                        if(aesthetic.Color) {c.Color = c.key}; return c;
                                     })},color,clickEvent)
                 .draw(layerFacet)
             else
