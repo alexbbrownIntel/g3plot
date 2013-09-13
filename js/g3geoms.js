@@ -334,7 +334,6 @@
           .datum(function(d){return d})
           .attr("class", "line")
           .style("fill","none")
-          .style("stroke",function(d){return color(d.key)})
           .style("strokewidth","1px")
           .attr("d", function(d){return geom.position.call(this,d3.svg.line()).call(this,d.values)})
           .append("title")
@@ -348,6 +347,7 @@
   
       a
      //   .transition()
+        .style("stroke",function(d){return color(d.key)})
         .attr("d", function(d){return geom.position.call(this,d3.svg.line()).call(this,d.values)})
   
       a.exit()
