@@ -931,7 +931,7 @@
                 return _.map(d3.nest().key(function(d) {
                                         return d.Group || d.Color
                                     }).entries(d.values),function(c) {
-                                        if(aesthetic.Color) {c.Color = c.key}; return c;
+                                        if(aesthetic.Color) {c.Color = c.values[0].Color}; return c;
                                     })},color,clickEvent)
                 .draw(layerFacet)
             else
