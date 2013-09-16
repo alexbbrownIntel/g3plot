@@ -732,9 +732,10 @@
             }
             
             
-            if (fast)
-              s.call(d.xAxis)
-            else
+            if (fast) {
+              s.call(d.xAxis
+              .tickSize(-height)) // enables (flickery) x grid - remove to just have ticks
+            } else
               s
                 .transition()
                 .call(d.xAxis)
