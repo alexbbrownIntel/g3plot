@@ -738,7 +738,7 @@
             } else
               s
                 .transition()
-                .call(d.xAxis)
+                .call(d.xAxis.tickSize(-height))
 
             return s;
           }) 
