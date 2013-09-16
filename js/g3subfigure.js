@@ -239,9 +239,11 @@
               color.domain(_.unique(_.pluck(aesData,"Color")).sort())
             }
             
-            if (plan.data.message.range && plan.data.message.range.Color) {
+
+          }
+          // Load color scales anyway - to set the defaults.
+          if (plan.data.message.range && plan.data.message.range.Color) {
               color.range(plan.data.message.range.Color)
-            }
           }
           break;
         case "linear":
