@@ -770,6 +770,7 @@
             var PixelsPerTick = 20
             d.yAxis.ticks(Math.min(extent/PixelsPerTick,10))
           }
+          d.yAxis.tickSize(-width)
           d.yAxis(s)
           return s;
         })
