@@ -202,7 +202,7 @@
       .each(function(plan,i){
         var xAxisHeight = 0
         var xClusterAxisHeight = 0
-        var legendWidth = 60
+        var legendWidth = 20
         if (aestheticUtils.hasAesthetic(plan,"X")) {
           xAxisHeight += 25
         }
