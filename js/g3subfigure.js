@@ -150,8 +150,8 @@
       // note that this domain calculation ignores any use of x0 or dx and might not get
       // scales right for objects with those.
       var xData
-      if (graph.limits && !_.isUndefined(graph.limits.x)) {
-        xData=graph.limits.x
+      if (graph.limits && graph.limits.x && !_.isUndefined(graph.limits.x.all)) {
+        xData=graph.limits.x.all
       } else {
         xData = _.pluck(aesData,"X").concat(g3functional.pluralise(graph.extents && graph.extents.x))
         if (aestheticUtils.hasAesthetic(plan,"DX"))
@@ -210,8 +210,8 @@
         case "linear":
           yScale_master = d3.scale.linear()
       
-          if (plan.data.message.limits && !_.isUndefined(plan.data.message.limits.y)) {
-            yScale_master.domain(plan.data.message.limits.y)
+          if (plan.data.message.limits && plan.data.message.limits.y && !_.isUndefined(plan.data.message.limits.y.all)) {
+            yScale_master.domain(plan.data.message.limits.y.all)
           } else {
             if (plan.data.message.extents && !_.isUndefined(plan.data.message.extents.y)) {
               if (!_.isArray(plan.data.message.extents.y))
@@ -307,8 +307,8 @@
             // possible options here allow domain to be adjusted per x facet 
             // this code is a clone of code above in ordinal
             var xData
-            if (graph.limits && _.isUndefined(graph.limits.x)) {
-              xData=graph.limits.x
+            if (graph.limits && graph.limits.x && _.isUndefined(graph.limits.x.all)) {
+              xData=graph.limits.x.all
             } else {
               xData = _.pluck(facet.values,"X").concat(g3functional.pluralise(graph.extents && graph.extents.x))
               if (aestheticUtils.hasAesthetic(plan,"DX"))
