@@ -359,7 +359,34 @@
 				  graph.dimensions.facetMargin.y : 20
         
         var y = yScale_master.copy()
+       
+        // if Y scales are free, recalculate them here
+        if (graph.limits && graph.limits.y && graph.limits.y.free) {
+          switch(scaleY) {
+            case "log":
+              y = d3.scale.log()
+                // extent is over ALL data here - is that appropriate? not always.
+                .domain(d3.extent(facet.values, function(d) { return d.Y; }))
+              break;
+            case "linear":
+              y = d3.scale.linear()
         
+              if (plan.data.message.extents && !_.isUndefined(plan.data.message.extents.y)) {
+                if (!_.isArray(plan.data.message.extents.y))
+                  plan.data.message.extents.y = [plan.data.message.extents.y]
+                y.domain(d3.extent(facet.values.concat(_.map(plan.data.message.extents.y,function(y){return {y:y}})), 
+                  function(d) { return ((d.y0+d.y)||d.y); })).nice();
+              } else {
+                 // temporarily suppress 0 inclusion
+                y.domain(d3.extent(facet.values, function(d) { return ((d.y0+d.y)||d.y); })).nice();
+              }
+            break;
+          default:
+            throw("Unknown x scale type: \""+scaleY+"\"");
+            break;
+          }
+        }
+
         y.range([(countFacets-i)*(height+facetMargin)/countFacets-facetMargin,
                 (countFacets-1-i)*(height+facetMargin)/countFacets])
         
