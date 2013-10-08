@@ -520,7 +520,7 @@
           .attr("width", function(d) { return xFacetScale(this).rangeBand() - x_padding; })
           .attr("y", first?function(d) { return yFacetScale(this)(0) }:function(d) { return yFacetScale(this)(d.y0 + d.y) })
           .attr("height", first?0:function(d) { return yFacetScale(this)(d.y0) - yFacetScale(this)(d.y0 + d.y) })
-          .style("fill", function(d) { return color(d.Fill); })
+          .style("fill", function(d) { return color(d.Color); })
       }} 
   
     geom.draw = function bar_draw(plot,data) {
@@ -543,7 +543,7 @@
         .append("title");
         
       a.select("title")
-        .text( labelFn("Fill") )
+        .text( labelFn("Color") )
 
       a
         .on("click",event) // if null, removes event
@@ -583,7 +583,7 @@
           //.attr("y", function(d) { return yFacetScale(this)(d.y0 + d.y) })
           //.attr("height", function(d) { return yFacetScale(this)(d.y0) - yFacetScale(this)(d.y0 + d.y) })
         
-          .style("fill", function(d) { return color(d.Fill); })
+          .style("fill", function(d) { return color(d.Color); })
       }}
 
     geom.draw = function(plot,data) {
@@ -608,7 +608,7 @@
         .append("title");
         
       a.select("title")
-        .text( labelFn("Fill") )
+        .text( labelFn("Color") )
 
       a
         .transition()

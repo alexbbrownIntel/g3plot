@@ -57,7 +57,7 @@
     
       // Do calculation for stacked bars.  Not sure how this gets called.
       if(position && position.x == "stack") { // is this X?
-        g3stats.barStack(aesData, "Fill")  
+        g3stats.barStack(aesData, "Color")  
       } else {
         if (!_.isUndefined(aesthetic.XCluster)) {
           _.each(aesData,function(d){
