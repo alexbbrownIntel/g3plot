@@ -149,9 +149,14 @@
       // calculate unzoomed domains
       // note that this domain calculation ignores any use of x0 or dx and might not get
       // scales right for objects with those.
-      var xData = _.pluck(aesData,"X").concat(g3functional.pluralise(graph.extents && graph.extents.x))
-      if (aestheticUtils.hasAesthetic(plan,"DX"))
-        xData = xData.concat(aesData.map(function(d){return +d.DX?+d.X+d.DX:+d.X})) // assume right extend DX
+      var xData
+      if (graph.limits && !_.isUndefined(graph.limits.x)) {
+        xData=graph.limits.x
+      } else {
+        xData = _.pluck(aesData,"X").concat(g3functional.pluralise(graph.extents && graph.extents.x))
+        if (aestheticUtils.hasAesthetic(plan,"DX"))
+          xData = xData.concat(aesData.map(function(d){return +d.DX?+d.X+d.DX:+d.X})) // assume right extend DX
+      }
   
       var numerise = function(x){return _.map(x,function(x){return +x})}
             
@@ -204,15 +209,19 @@
           break;
         case "linear":
           yScale_master = d3.scale.linear()
-          
-          if (plan.data.message.extents && !_.isUndefined(plan.data.message.extents.y)) {
-            if (!_.isArray(plan.data.message.extents.y))
-              plan.data.message.extents.y = [plan.data.message.extents.y]
-            yScale_master.domain(d3.extent(aesData.concat(_.map(plan.data.message.extents.y,function(y){return {y:y}})), 
-              function(d) { return ((d.y0+d.y)||d.y); })).nice();
+      
+          if (plan.data.message.limits && !_.isUndefined(plan.data.message.limits.y)) {
+            yScale_master.domain(plan.data.message.limits.y)
           } else {
-             // temporarily suppress 0 inclusion
-            yScale_master.domain(d3.extent(aesData, function(d) { return ((d.y0+d.y)||d.y); })).nice();
+            if (plan.data.message.extents && !_.isUndefined(plan.data.message.extents.y)) {
+              if (!_.isArray(plan.data.message.extents.y))
+                plan.data.message.extents.y = [plan.data.message.extents.y]
+              yScale_master.domain(d3.extent(aesData.concat(_.map(plan.data.message.extents.y,function(y){return {y:y}})), 
+                function(d) { return ((d.y0+d.y)||d.y); })).nice();
+            } else {
+               // temporarily suppress 0 inclusion
+              yScale_master.domain(d3.extent(aesData, function(d) { return ((d.y0+d.y)||d.y); })).nice();
+            }
           }
           break;
         default:
@@ -297,9 +306,14 @@
           case "ordinal": { 
             // possible options here allow domain to be adjusted per x facet 
             // this code is a clone of code above in ordinal
-            var xData = _.pluck(facet.values,"X").concat(g3functional.pluralise(graph.extents && graph.extents.x))
-            if (aestheticUtils.hasAesthetic(plan,"DX"))
-              xData = xData.concat(facet.values.map(function(d){return +d.DX?+d.X+d.DX:+d.X})) // assume right extend DX
+            var xData
+            if (graph.limits && _.isUndefined(graph.limits.x)) {
+              xData=graph.limits.x
+            } else {
+              xData = _.pluck(facet.values,"X").concat(g3functional.pluralise(graph.extents && graph.extents.x))
+              if (aestheticUtils.hasAesthetic(plan,"DX"))
+                xData = xData.concat(facet.values.map(function(d){return +d.DX?+d.X+d.DX:+d.X})) // assume right extend DX
+            }
                         
             x.domain(xData)
             
