@@ -107,7 +107,7 @@ diamonds_plot <- function(...) {
        name="diamonds",
        structure=list(Key="id", Character=list(Cut="cut",Clarity="clarity",color="color"), 
                       Measurements=c(carat="carat",x="x",y="y",z="z",table="table",color="color"), Value="price"),
-       aesthetic=list(Key="Key", XCluster=list(Cut=list("Character","Cut")), Y="Value",
+       aesthetic=list(Key=list(Key="Key"), XCluster=list(Cut=list("Character","Cut")), Y="Value",
                       Color=list("Measurements","color"), X=list("Measurements","carat")
        ),
        labels=list(x="Character of diamond", y="price"),
@@ -432,7 +432,8 @@ airquality_plot <- function(dataName) {
          structure=list(Rownames="row",Measurements=selfList(c("Temp","Solar.R"))),
          aesthetic=list(Key="Rownames",XFilterKey="Rownames",Y=list("Measurements","Temp"), X=list("Measurements","Solar.R")),
          #labels=list(x=field, y="Count"),
-         geom=c("voronoi","point"), 
+        # geom=c("voronoi","point"), 
+         geom=c("point"), 
          onBrush=list(x=list(drag=list(filter=TRUE))),
          scales=list(x="linear",y="linear"),
          labels=list(y="Temp",x="Solar Radiation"),

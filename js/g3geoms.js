@@ -21,7 +21,7 @@
     // Key should uniquely identify a dot (part), and is used for animation.
     // Note that if key does NOT uniquely define a point then points may
     // be dropped
-    if (!_.isUndefined(d.Key)) return _.isDate(d.Key)?[""+(+d.Key)]:_.values(d.Key)
+    if (!_.isUndefined(d.Key)) return _.isDate(d.Key)?[""+(+d.Key)]:_.isObject(d.Key)?_.values(d.Key):[""+(+d.Key)]
     return i
   }
   
