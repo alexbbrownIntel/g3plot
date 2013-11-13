@@ -107,7 +107,7 @@ diamonds_plot <- function(...) {
        name="diamonds",
        structure=list(Key="id", Character=list(Cut="cut",Clarity="clarity",color="color"), 
                       Measurements=c(carat="carat",x="x",y="y",z="z",table="table",color="color"), Value="price"),
-       aesthetic=list(Key="Key", XCluster=list(Cut=list("Character","Cut")), Y="Value",
+       aesthetic=list(Key=list(Key="Key"), XCluster=list(Cut=list("Character","Cut")), Y="Value",
                       Color=list("Measurements","color"), X=list("Measurements","carat")
        ),
        labels=list(x="Character of diamond", y="price"),
