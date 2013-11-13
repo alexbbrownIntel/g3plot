@@ -181,6 +181,10 @@
         .append("title")    
    
       voronoi
+        // note that the next line is not mactched by one that can 
+        // remove voronois that failed to pass through - this is caused
+        // by do-incident points. TODO
+        .filter(function(d,i) { return !_.isUndefined(d.voronoiPath) })
         .attr("clip-path", function(d,i) { return "url(#clip-"+d.voronoiClipID+")"; })
         .attr("d", function(d){
           //return geom.positionPath.call(this,d3.svg.line()).call(this,d.voronoiPath) // possible unscaled linear version
