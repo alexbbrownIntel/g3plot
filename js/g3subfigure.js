@@ -371,14 +371,19 @@
             case "linear":
               y = d3.scale.linear()
         
-              if (plan.data.message.extents && !_.isUndefined(plan.data.message.extents.y)) {
-                if (!_.isArray(plan.data.message.extents.y))
-                  plan.data.message.extents.y = [plan.data.message.extents.y]
-                y.domain(d3.extent(facet.values.concat(_.map(plan.data.message.extents.y,function(y){return {y:y}})), 
-                  function(d) { return ((d.y0+d.y)||d.y); })).nice();
+              if (plan.data.message.limits && plan.data.message.limits.y && plan.data.message.limits.y.facets &&
+                  !_.isUndefined(plan.data.message.limits.y.facets[facet.key])) {
+                y.domain(plan.data.message.limits.y.facets[facet.key]) 
               } else {
-                 // temporarily suppress 0 inclusion
-                y.domain(d3.extent(facet.values, function(d) { return ((d.y0+d.y)||d.y); })).nice();
+                if (plan.data.message.extents && !_.isUndefined(plan.data.message.extents.y)) {
+                  if (!_.isArray(plan.data.message.extents.y))
+                    plan.data.message.extents.y = [plan.data.message.extents.y]
+                  y.domain(d3.extent(facet.values.concat(_.map(plan.data.message.extents.y,function(y){return {y:y}})), 
+                    function(d) { return ((d.y0+d.y)||d.y); })).nice();
+                } else {
+                   // temporarily suppress 0 inclusion
+                  y.domain(d3.extent(facet.values, function(d) { return ((d.y0+d.y)||d.y); })).nice();
+                }
               }
             break;
           default:
