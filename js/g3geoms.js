@@ -266,7 +266,7 @@
           .x(function(d) { return xFacetScale(this)(d.X) })
           .y1(function(d) { return yFacetScale(this)(d.Y) })
           .y0(function(d) { return yFacetScale(this)(0) })
-          .defined(function(d) { return !d.Missing })
+          .defined(function(d) { return !d.Missing && d.y!=null })
         return (l)
     }
    
@@ -324,7 +324,8 @@
         l
           .x(function(d) { return xFacetScale(this)(d.X) })
           .y(function(d) { return yFacetScale(this)(d.Y) })
-          .defined(function(d) { return !d.Missing })
+          // http://stackoverflow.com/questions/15259444/drawing-non-continuous-lines-with-d3
+          .defined(function(d) { return !d.Missing && d.y!=null })
         return (l)
     }
    
