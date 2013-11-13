@@ -505,7 +505,7 @@
             .attr("width",function(d){return d.xExtent[1]-d.xExtent[0]})
             .attr("x",function(d){return d.x})
             .attr("y",0)
-            .attr("height",1000)
+            .attr("height",1000) // should be actual height?
             //.append("svg")
            // .append("rect").attr("class","svgbg").style("fill","#FFF")
             //.attr("y",function(d){return this.parentNode.__data__.yScale.range()[0]})
