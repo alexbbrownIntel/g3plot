@@ -7,12 +7,13 @@
 
   var parentD=function(n,old){return old && n.parentNode.__data_old__ ? n.parentNode.__data_old__ : n.parentNode.__data__}
   var parentD2=function(n){return n.parentNode.parentNode.__data__}
+  var parentD3=function(n){return n.parentNode.parentNode.parentNode.__data__}
+  var parentD4=function(n){return n.parentNode.parentNode.parentNode.parentNode.__data__}
 
-  // Get the parent's scale property
-  var xFacetScale=function(n,old){return parentD(n,old).xScale}
-  var yFacetScale=function(n,old){return parentD(n).yScale}
- 
-  var yFacetScale=function(n){return parentD2(n).yScale}
+
+  // Get the parent cellfacet's scale property
+  var xFacetScale=function(n,old){return parentD2(n,old).xScale} 
+  var yFacetScale=function(n){return parentD3(n).yScale}
   // NB: this keyfunction should return a unique key, which means x|color should be unique.
   // If not, then the code can fail.  Current hierarchy implementation does generate a unique
   // X for each, but that will probably change, since the innermost X should probably be
@@ -21,7 +22,7 @@
     // Key should uniquely identify a dot (part), and is used for animation.
     // Note that if key does NOT uniquely define a point then points may
     // be dropped
-    if (!_.isUndefined(d.Key)) return _.isDate(d.Key)?[""+(+d.Key)]:_.values(d.Key)
+    if (!_.isUndefined(d.Key)) return _.isDate(d.Key)?[""+(+d.Key)]:_.isObject(d.Key)?_.values(d.Key):[""+(+d.Key)]
     return i
   }
   
@@ -89,11 +90,11 @@
       //  style("pointer-events",event?"auto":"none") // prevents hover
   
       a
-     //   .transition()
+        .transition()
         .call(geom.position)
   
       a.exit()
-      //  .transition()
+        .transition()
         .attr("r", 0)
         .remove()
         
@@ -135,8 +136,8 @@
         
     geom.positionCircle = function(d) {
       
-      var xFacetScale=function(n,old){return parentD2(n).xScale}
-      var yFacetScale=function(n,old){return parentD2(n).yScale}
+      var xFacetScale=function(n,old){return parentD3(n).xScale}
+      var yFacetScale=function(n,old){return parentD4(n).yScale}
       
       d
         .attr("cx",function(d) { return xFacetScale(this)(d.X) })   
@@ -180,6 +181,10 @@
         .append("title")    
    
       voronoi
+        // note that the next line is not mactched by one that can 
+        // remove voronois that failed to pass through - this is caused
+        // by do-incident points. TODO
+        .filter(function(d,i) { return !_.isUndefined(d.voronoiPath) })
         .attr("clip-path", function(d,i) { return "url(#clip-"+d.voronoiClipID+")"; })
         .attr("d", function(d){
           //return geom.positionPath.call(this,d3.svg.line()).call(this,d.voronoiPath) // possible unscaled linear version
@@ -249,7 +254,66 @@
   }
   
   
-    // draw points.
+  // draw area. y0 is 0 for the moment
+  // yScale input is carried in the facet
+  exports.area  = function(plot,globalData,color,event) {
+    // subfigure redraws.
+    function geom() {
+    }
+
+    geom.position = function(l) {
+        l
+          .x(function(d) { return xFacetScale(this)(d.X) })
+          .y1(function(d) { return yFacetScale(this)(d.Y) })
+          .y0(function(d) { return yFacetScale(this)(0) })
+          .defined(function(d) { return !d.Missing && d.y!=null })
+        return (l)
+    }
+   
+    geom.draw = function area_draw(plot,data) {
+      if (!data) data = globalData
+      
+      var a = plot.selectAll("path.area")
+          .data(data)
+  
+      a.enter().append("path")
+          .datum(function(d){return d})
+          .attr("class", "area")
+          .style("stroke","none")
+          .style("fill",function(d){return color(d.key)})
+          .attr("d", function(d){return geom.position.call(this,d3.svg.area()).call(this,d.values)})
+          .append("title")
+        
+      a.select("title")
+        .text( labelFn("Color") )
+                  
+      a
+        .on("click",event) // if null, removes event
+        .style("cursor",event?"pointer":null)
+  
+      a
+     //   .transition()
+        .attr("d", function(d){return geom.position.call(this,d3.svg.area()).call(this,d.values)})
+  
+      a.exit()
+    //    .transition()
+        .attr("r", 0)
+        .remove()
+        
+      return("path.area")
+    }
+    
+    geom.fast_redraw = function fast_redraw_area(plot) {
+      var a = plot.selectAll(".area")
+  
+      a
+        .attr("d", function(d){return geom.position.call(this,d3.svg.area()).call(this,d.values)})
+    }
+    
+    return geom
+  }
+
+  // draw points.
   // yScale input is carried in the facet
   exports.line  = function(plot,globalData,color,event) {
     // subfigure redraws.
@@ -260,7 +324,8 @@
         l
           .x(function(d) { return xFacetScale(this)(d.X) })
           .y(function(d) { return yFacetScale(this)(d.Y) })
-          .defined(function(d) { return !d.Missing })
+          // http://stackoverflow.com/questions/15259444/drawing-non-continuous-lines-with-d3
+          .defined(function(d) { return !d.Missing && d.y!=null })
         return (l)
     }
    
@@ -274,7 +339,6 @@
           .datum(function(d){return d})
           .attr("class", "line")
           .style("fill","none")
-          .style("stroke",function(d){return color(d.key)})
           .style("strokewidth","1px")
           .attr("d", function(d){return geom.position.call(this,d3.svg.line()).call(this,d.values)})
           .append("title")
@@ -288,6 +352,7 @@
   
       a
      //   .transition()
+        .style("stroke",function(d){return color(d.Color)})
         .attr("d", function(d){return geom.position.call(this,d3.svg.line()).call(this,d.values)})
   
       a.exit()
@@ -321,7 +386,7 @@
     geom.position = function(d) {
       d
         .attr("x", function(d) { 
-          var x=xFacetScale(this)(d.X)
+          var x=xFacetScale(this)(d.x)
           return xFacetScale(this).rangeBand() > x_pad_minimum ? x + x_padding : x
         })
         .attr("width", function(d) { 
@@ -460,7 +525,7 @@
           .attr("width", function(d) { return xFacetScale(this).rangeBand() - x_padding; })
           .attr("y", first?function(d) { return yFacetScale(this)(0) }:function(d) { return yFacetScale(this)(d.y0 + d.y) })
           .attr("height", first?0:function(d) { return yFacetScale(this)(d.y0) - yFacetScale(this)(d.y0 + d.y) })
-          .style("fill", function(d) { return color(d.Fill); })
+          .style("fill", function(d) { return color(d.Color); })
       }} 
   
     geom.draw = function bar_draw(plot,data) {
@@ -483,7 +548,7 @@
         .append("title");
         
       a.select("title")
-        .text( labelFn("Fill") )
+        .text( labelFn("Color") )
 
       a
         .on("click",event) // if null, removes event
@@ -523,7 +588,7 @@
           //.attr("y", function(d) { return yFacetScale(this)(d.y0 + d.y) })
           //.attr("height", function(d) { return yFacetScale(this)(d.y0) - yFacetScale(this)(d.y0 + d.y) })
         
-          .style("fill", function(d) { return color(d.Fill); })
+          .style("fill", function(d) { return color(d.Color); })
       }}
 
     geom.draw = function(plot,data) {
@@ -548,7 +613,7 @@
         .append("title");
         
       a.select("title")
-        .text( labelFn("Fill") )
+        .text( labelFn("Color") )
 
       a
         .transition()

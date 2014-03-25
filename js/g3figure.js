@@ -163,18 +163,21 @@
         g3figure.filter.addWidget(d.subfigure.filterHandle());
       })
     
-    if(plans.length == 0 || plans[plans.length-1].data.message.grid == null){ 
+    // find first layer with grid
+    var grid_layers = _.chain(plans).pluck("layers").flatten(true).filter(function(layer){return !_.isUndefined(layer.data.message.grid)}).value()
+    
+    
+    if(grid_layers.length==0){ 
       // need to remove the table
       d3.select(el).select(".d3Table").select("table").remove()
       // and turn off the filters.  um, why?
       //exports.filter.clear()
     } else {
-      // It should mean - draw a table for each subFigure that wants one.  But I only
-      // know how to draw one table at the moment so only the last one that wants one
+      // It should mean - draw a table for each subfigure and layer that wants one.  But I only
+      // know how to draw one table at the moment so only the last layer that wants one
       // right now it does 'if the last plan wants a table' do it.
-      if(plans[plans.length-1].data.message.grid != null) {
-        exports.filter.addWidget(g3figure.table(d3.select(el).select(".d3Table"),plans[plans.length-1])); 
-      }
+      var grid_layer=_.last(grid_layers)
+      exports.filter.addWidget(g3figure.table(d3.select(el).select(".d3Table"),grid_layer)); 
     }
   }
 
@@ -194,20 +197,25 @@
     })
     subFigure.exit().remove();
     
-    
-    // calculate the inner sizes for the subFigure
+    // adjust figure margins where aesthetics require guides
     subFigure
       .each(function(plan,i){
         var xAxisHeight = 0
         var xClusterAxisHeight = 0
-        if (plan.metaData.aestheticStructure.X) {
+        var legendWidth = 20
+        if (aestheticUtils.hasAesthetic(plan,"X")) {
           xAxisHeight += 25
         }
-        if (plan.metaData.aestheticStructure.XCluster) {
+        if (aestheticUtils.hasAesthetic(plan,"XCluster")) {
           // 1+length because there's always an outer cluster to select all
-          xClusterAxisHeight = (1+_.keys(plan.metaData.aestheticStructure.XCluster).length) * 20
+          xClusterAxisHeight = (1+aestheticUtils.hasAesthetic(plan,"XCluster")) * 20
+        }
+        if (aestheticUtils.hasAesthetic(plan,"Color") || aestheticUtils.hasAesthetic(plan,"Fill")) {
+          // 1+length because there's always an outer cluster to select all
+          legendWidth += 100
         }
 
+        // TODO: enable user to disable showing guides
         
         var s=d3.select(this);
         // calculate the inner sizes.  Should go in d3subfigure since
@@ -218,7 +226,7 @@
         var dimensions = plan.dimensions
         dimensions.margin = {
           top: (widgets.size=="history")?0:20, 
-          right: 160,
+          right: legendWidth,
           bottom: (widgets.size=="mini")?10:
                   (widgets.size=="history")?25:(xAxisHeight + xClusterAxisHeight),
           xcluster: xClusterAxisHeight,
@@ -256,8 +264,11 @@
   }  
   
   // filter is a per-plot (possibly global) filter collection that
-  // sends filter messages amongst graphs.  Should rebuild to use
-  // d3.dispatch (but what about new graphs - how do they get filters?)
+  // sends filter messages amongst graphs.  
+  
+  // TODO: Should rebuild to use either:
+  // * d3.dispatch (but what about new graphs - how do they get filters?)
+  // * just using css selectors to find filterable things, then invoke update on them?
   exports.filter = function() {
     exports.filter.widgets = []
     exports.filter.unfilter = function() {

@@ -107,7 +107,7 @@ diamonds_plot <- function(...) {
        name="diamonds",
        structure=list(Key="id", Character=list(Cut="cut",Clarity="clarity",color="color"), 
                       Measurements=c(carat="carat",x="x",y="y",z="z",table="table",color="color"), Value="price"),
-       aesthetic=list(Key="Key", XCluster=list(Cut=list("Character","Cut")), Y="Value",
+       aesthetic=list(Key=list(Key="Key"), XCluster=list(Cut=list("Character","Cut")), Y="Value",
                       Color=list("Measurements","color"), X=list("Measurements","carat")
        ),
        labels=list(x="Character of diamond", y="price"),
@@ -251,7 +251,7 @@ msleep_plot <- function(dataName,...) {
                       Key=list("Clade","Name")
                      # YFacet=list("Type")
        ),
-       labels=list(x="Clade", y="sleep_total"),
+       labels=list(x="Clade", y="sleep_total",Color="Eating habits"),
        geom="point_bar",
        scales=list(x="unit"),
        extents=list(y=0,Color=levels(msleep$vore)),
@@ -415,7 +415,7 @@ DNase_plot <- function(dataName) {
        geom="point", 
        #onBrush=list(x=list(drag=list(filter=TRUE))),
        scales=list(x="linear",y="linear"), # want to use rangebanded linear here really.  x will be misaligned
-       grid=list(key="Experiment",
+       grid=list(key=list(Experiment="Experiment"),
                  group="Replicate",
                  value="Response")#,
   #     extents=list(y=0,x=with(aHist,breaks[length(breaks)]))
@@ -423,24 +423,50 @@ DNase_plot <- function(dataName) {
 }
 
 airquality_plot <- function(dataName) {
+  
+  if(!require(mgcv)) stop("Required packages mgcv not available")
+
+  # build a humped model of air quality
+  gairq <- gam(Temp~s(Solar.R),data=airquality)
+  nSolar.R <- pretty(airquality$Solar.R,n=50)
+  # note that JSON chokes on arrays, so convert predict output to a vector
+  model_frame <- data.frame(Solar.R=nSolar.R,Temp=as.vector(predict(gairq,data.frame(Solar.R=nSolar.R))))
+
+  
   dataSet <- get(dataName)
   dataSet$row = rownames(dataSet)
   list(
     list(type="plot",
-         table=forceTableVector(dataSet),
-         name=paste0(dataName,"_AQ"), 
-         structure=list(Rownames="row",Measurements=selfList(c("Temp","Solar.R"))),
-         aesthetic=list(Key="Rownames",XFilterKey="Rownames",Y=list("Measurements","Temp"), X=list("Measurements","Solar.R")),
-         #labels=list(x=field, y="Count"),
-         geom=c("voronoi","point"), 
-         onBrush=list(x=list(drag=list(filter=TRUE))),
+         labels=list(y="Temp",x="Solar Radiation / Wind"),
+         onZoom=T,
          scales=list(x="linear",y="linear"),
-         labels=list(y="Temp",x="Solar Radiation"),
-         onZoom=T
-         ),
+         name=paste0(dataName,"_AQ"),
+         onBrush=list(x=list(drag=list(filter=TRUE))),
+         layers=list(
+           list(type="layer",
+                name="Solar",
+                data=forceTableVector(dataSet),
+                structure=list(Rownames="row",Measurements=selfList(c("Temp","Solar.R"))),
+                aesthetic=list(Key="Rownames",XFilterKey="Rownames",
+                               Y=list("Measurements","Temp"),
+                               X=list("Measurements","Solar.R")),
+                geom=c("voronoi","point")
+                #geom=list("point")
+           ),
+           list(type="layer",
+                name="Solar_Model",
+                data=forceTableVector(model_frame),
+                structure=list(Measurements=selfList(c("Temp","Solar.R"))),
+                aesthetic=list(Y=list("Measurements","Temp"),
+                               X=list("Measurements","Solar.R")),
+                #geom=c("voronoi","point")
+                geom=list("line")
+           )
+         )
+    ),
     list(type="plot",
          table=forceTableVector(dataSet),
-         name=dataName, 
+         name=dataName,
          structure=list(Rownames="row",Measurements=selfList(c("Wind","Temp"))),
          aesthetic=list(Key="Rownames",XFilterKey="Rownames",X=list("Measurements","Wind"), Y=list("Measurements","Temp")),
          #labels=list(x=field, y="Count"),
@@ -495,9 +521,10 @@ AirPassengers_plot <- function(dataName) {
        table=forceTableVector(dataSet2),
        structure=selfList(names(dataSet2)),
        aesthetic=list(X="date",Y="passengers"),
-       geom="line",
+       geom="area",
        labels=list(x="Date",y="Passenger count"),
        scales=list(x="date"),
+       extents=list(y=0), 
        onZoom=T
   ),
   list(type="plot",
@@ -625,3 +652,6 @@ wikipedia_nav_plot <- function(dataName) {
        #extents=c(zoom=c(0,1000000))
   )
 }
+
+
+# TODO: Ozone is very interesting

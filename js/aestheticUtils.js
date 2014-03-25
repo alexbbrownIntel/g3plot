@@ -15,10 +15,10 @@
       return recordWalker.other(
         // for each string S in structure, pull out the indexed element
         // of the array named S in data.
-        recordWalker.indexedMemberOf(message.table,index))(structure);
+        recordWalker.indexedMemberOf(message.data,index))(structure);
     }
     // the number of records:
-    var recordCount = _.values(message.table)[0].length
+    var recordCount = _.values(message.data)[0].length
     // use the walker to map the structure onto the data
     var records = d3.range(0,recordCount).map(buildRecord)
     
@@ -62,6 +62,26 @@
       // if any tests failed, they remain in the output.
       return _.isUndefined(filterWalker.walk(aesFilterSpec,record))
     }    
+  }
+  
+  // utilities - shouldn't be here really since it's about the concrete plan containing aesthetics.
+  
+  // returns length of (first?) valid aesthetic or undefined if none
+  exports.hasAesthetic = function hasAesthetic(plan,aesthetic) {
+    // look in global aesthetic structure first
+    var aesthetics = []
+    if (plan.metaData && plan.aestheticStructure && plan.metaData.aestheticStructure[aesthetic]) {
+      aesthetics.push(plan.metaData.aestheticStructure[aesthetic])
+    }
+    // look in local aesthetic next
+    _.map(plan.layers,function(l){
+      if (l.metaData.aestheticStructure[aesthetic]) {
+        aesthetics.push(l.metaData.aestheticStructure[aesthetic])         
+      }
+    })
+    // return the length of the olength of the first aesthetic (or 1 for atomics or objects)
+    return _.isObject(aesthetics[0]) ?
+      _.keys(aesthetics[0]).length : !_.isUndefined(aesthetics[0])
   }
 
 })(typeof exports === 'undefined'? this['aestheticUtils']={}: exports);

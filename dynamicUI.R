@@ -16,7 +16,7 @@ output$dataSetControls <- renderUI({
   
   if (is.null(hashParts())) return(NULL)
   hashDataSelected <- hashParts()$dataSet
-  selectedDataSets <- NULL
+  selectedDataSets <- "airquality"
   if (!is.null(hashDataSelected)) {
     selectedDataSets <- as.numeric(strsplit(hashDataSelected,"\\|")[[1]])
     selectedDataSets <- intersect(selectedDataSets,groupedDataSets)

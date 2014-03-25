@@ -31,9 +31,8 @@
         color, // the color scale
         // transformed versions of the data
         partitionedNodes, // the partitioned node data (at what level?)
-        strData,
-        aesData,
-        aesStructure, // aes map applied to structure map gives aes -> data_frame names
+        master_layer_index, // the layer which controls faceting, brushing and filtering (only one for now)
+        master_layer, // the plan for the master layer
         // some information about the current geoms - for filtering
         yFacetedData, // the faceted data subsets - y (by row, not cell)
         xFacetedData, // facets for x (by column, not cell)
@@ -41,45 +40,26 @@
         yFacet, // the y (row) facet selector
         xFacetAxis, // the x (column) facet UI selector (does not contain cellfacets)
         cellFacet, // the cell facet selector
-        dataPointSelector; // how to select all geoms.  This should be easier
+        layerFacet, // the layer facet selector
+        dataPointSelector; // how to select all geoms.  This should be easier, layered and multi-geom
 
-        
-    subfigure.setupData=function(subfigureElement, _plan, newDimensions){
-      
-      el = subfigureElement
-      plan = _plan
-      dimensions=newDimensions
-      margin=dimensions.margin
-      width=dimensions.width
-      height=dimensions.height
-      
-      subfigure.dispatch = d3.dispatch("click")
-      
-      if (plan.error != undefined) throw({message:"renderPlot error:" + plan.error})
-      
+    // for each layer, perform any stats which are required.  After this, the layers
+    // are combined into a single array.  Current stats are just barStack.
+    subfigure.doLayerStats=function(layer){
+           
+      // expects scaleX, width, margin etc to be already set-up by caller
+           
       // unbundle the plot message
-      graph = plan.data.message,
-      strData = plan.data.structured,
-      aesData = plan.data.aesthetic,
-      aesStructure = plan.metaData.aestheticStructure;
-      
-      // Setup axes    
-      if (!_.isUndefined(graph.aesthetic.XCluster)) {
-        // Build the data struture for the hierarchical x-scale/X-axis.
-        // It would be nice if this were a real d3 axis type, but that would require
-        // nested heterogenous axis with variable size rangebands.  Not possible today
-        partitionedNodes = g3xcluster.hierarchX(aesData,graph.aesthetic.XCluster, aesStructure.XCluster, width, margin.xcluster)
-        
-      } else {
-        // do it anyway, with no data, for uniformity   
-        partitionedNodes = g3xcluster.hierarchX(aesData,"IGNORE THIS MESSAGE", {}, width, margin.xcluster)
-      }
+      var aesthetic = layer.data.message.aesthetic
+      var position = layer.data.message.position
+      var aesData = layer.data.aesthetic
+      var aesStructure = layer.metaData.aestheticStructure
     
       // Do calculation for stacked bars.  Not sure how this gets called.
-      if(graph.position && graph.position.x == "stack") { // is this X?
-        g3stats.barStack(aesData, "Fill")  
+      if(position && position.x == "stack") { // is this X?
+        g3stats.barStack(aesData, "Color")  
       } else {
-        if (!_.isUndefined(graph.aesthetic.XCluster)) {
+        if (!_.isUndefined(aesthetic.XCluster)) {
           _.each(aesData,function(d){
             d.y=d.Y // y is simply Y
             d.y0=0 // so that bars can be drawn from unstacked data,
@@ -92,29 +72,110 @@
         }
       }
       
+      // TODO: here we can also assign static color mappings for each 
+      // layer (doesn't have an entry in the layer yet)
+      
+      // TODO: here we can allow x and y transforms such as *10 or *2.5 to allow
+      // unlike quantities to be appropriately scales for parallel representation
+      // (yes I know it's a poor idea but it's often requested)
+      
+      return(aesData)
+    }
+ 
+    subfigure.setupData=function(subfigureElement, _plan, newDimensions){
+      
+      // note: these are not writing to locals!
+      el = subfigureElement
+      plan = _plan
+      dimensions=newDimensions
+      margin=dimensions.margin
+      width=dimensions.width
+      height=dimensions.height
+      
+      subfigure.dispatch = d3.dispatch("click")
+      
+      if (plan.error != undefined) throw({message:"renderPlot error:" + plan.error})
+      
+      // unbundle the plot message
+      graph = plan.data.message
+      
+      // don't choose colorfield yet since it's layer dependent and HAS the SAME SCALE (probably)
+      
+      // extract data from all layers
+      var aesData = d3.merge(_.pluck(_.pluck(plan.layers,"data"),"aesthetic"))
+      
+      // hang on to the master layer for filtering, clustering etc.
+      master_layer_index = 0
+      master_layer = plan.layers[master_layer_index]
+      
+      // Setup axes
+      
+      // xCluster Axis.  this one is special because the structure MUST exist and be the same
+      // for all layers.  This is not validated right now
+      // TODO: validate xCluster equivalence
+      // in the future we may allow one layer to apply to all clusters, but it's not clear
+      // right now how that might be implemented.
+      if (aestheticUtils.hasAesthetic(plan,"XCluster")) {
+        // Build the data struture for the hierarchical x-scale/X-axis.
+        // It would be nice if this were a real d3 axis type, but that would require
+        // nested heterogenous axis with variable size rangebands.  Not possible today
+        partitionedNodes = g3xcluster.hierarchX(aesData,graph.layers[master_layer_index].aesthetic.XCluster, 
+                                                master_layer.metaData.aestheticStructure.XCluster, width, margin.xcluster)
+      } else {
+        // do it anyway, with no data, for uniformity   
+        partitionedNodes = g3xcluster.hierarchX(aesData,"IGNORE THIS MESSAGE", {}, width, margin.xcluster)
+      }
+      
+      var postTransformLayers = _.map(plan.layers,subfigure.doLayerStats)
+      
       // Calculate the subset of axes/data for each y-facet (vertical 'small multiple')
       yFacetedData = g3figureDataUtils.facetData(aesData,"YFacet","Y");
+      // Calculate the X subfacets (aka cellFacets) of each Y facet
+      _.forEach(yFacetedData,function(yFacet){
+        yFacet.cellFacets = g3figureDataUtils.facetData(yFacet.values,"XCluster","X");
+        // calculate the Layers in each cellFacet
+        _.forEach(yFacet.cellFacets,function(cellFacet){
+          cellFacet.layerFacets = d3.nest().key(function(d) {
+            return d.layer.name; // TODO: check that all layers HAVE a name and are unique. 
+            })
+          .entries(cellFacet.values)
+        })
+      })
+
       
-      // also split x, in order to calculate facet scales - per column
+      // also split global dataset x, in order to calculate facet scales - per column
       xFacetedData = g3figureDataUtils.facetData(aesData,"XCluster","X")
     
-      // Global scales for x, color
-      // this scale will be copied everywhere.  for now.
+      // calculate unzoomed domains
+      // note that this domain calculation ignores any use of x0 or dx and might not get
+      // scales right for objects with those.
+      var xData
+      if (graph.limits && graph.limits.x && !_.isUndefined(graph.limits.x.all)) {
+        xData=graph.limits.x.all
+      } else {
+        xData = _.pluck(aesData,"X").concat(g3functional.pluralise(graph.extents && graph.extents.x))
+        if (aestheticUtils.hasAesthetic(plan,"DX"))
+          xData = xData.concat(aesData.map(function(d){return +d.DX?+d.X+d.DX:+d.X})) // assume right extend DX
+      }
+  
+      var numerise = function(x){return _.map(x,function(x){return +x})}
+            
+            // work out what the scales are
+      // TODO: this should be well known from defaults set up way earlier
+      
+      // Global scales for x, y, color
       scaleX = 
         (graph.scales && graph.scales.x && graph.scales.x) ? graph.scales.x : "linear"
-      if (_.isUndefined(graph.aesthetic.X)) {
+      if (!aestheticUtils.hasAesthetic(plan,"X")) {
         scaleX = "unit"
       }
       
-      // calculate unzoomed domains
-      var pluralise = function(x){return typeof(x)==="undefined"?[]:_.isArray(x)?x:[x]}
-      // note that this domain calculation ignores any use of x0 or dx and might not get
-      // scales right for objects with those.
-      var xData = _.pluck(aesData,"X").concat(pluralise(graph.extents && graph.extents.x))
-      if (graph.aesthetic.DX)
-      xData = xData.concat(aesData.map(function(d){return +d.X+d.DX})) // assume right extend DX
-      var numerise = function(x){return _.map(x,function(x){return +x})}
-            
+      scaleY = 
+        graph.scales && graph.scales.y || "linear"
+      
+      var scaleColor = 
+        graph.scales && graph.scales.Color || "ordinal"
+           
       switch(scaleX) {
         case "ordinal":
           xScale_master = d3.scale.ordinal()
@@ -133,59 +194,70 @@
             .domain(1) // need to update this later.
           break;
         default:
-          throw("Unknown scale type: \""+"scaleX"+"\"");
+          throw("Unknown x scale type: \""+scaleX+"\"");
           break;
       }
       
       
       // all the y's share a DOMAIN at the moment - 
       // so build it here, once
-      if (graph.scales && graph.scales.y && graph.scales.y == "log") {
-        yScale_master = d3.scale.log()
+      switch(scaleY) {
+        case "log":
+          yScale_master = d3.scale.log()
             // extent is over ALL data here - is that appropriate? not always.
             .domain(d3.extent(aesData, function(d) { return d.Y; }))
-    
-      } else {
-        yScale_master = d3.scale.linear()
-        
-        if (plan.data.message.extents && !_.isUndefined(plan.data.message.extents.y)) {
-          if (!_.isArray(plan.data.message.extents.y))
-            plan.data.message.extents.y = [plan.data.message.extents.y]
-          yScale_master.domain(d3.extent(aesData.concat(_.map(plan.data.message.extents.y,function(y){return {y:y}})), 
-            function(d) { return ((d.y0+d.y)||d.y); })).nice();
-        } else {
-           // temporarily suppress 0 inclusion
-          yScale_master.domain(d3.extent(aesData, function(d) { return ((d.y0+d.y)||d.y); })).nice();
-        }
+          break;
+        case "linear":
+          yScale_master = d3.scale.linear()
+      
+          if (plan.data.message.limits && plan.data.message.limits.y && !_.isUndefined(plan.data.message.limits.y.all)) {
+            yScale_master.domain(plan.data.message.limits.y.all)
+          } else {
+            if (plan.data.message.extents && !_.isUndefined(plan.data.message.extents.y)) {
+              if (!_.isArray(plan.data.message.extents.y))
+                plan.data.message.extents.y = [plan.data.message.extents.y]
+              yScale_master.domain(d3.extent(aesData.concat(_.map(plan.data.message.extents.y,function(y){return {y:y}})), 
+                function(d) { return ((d.y0+d.y)||d.y); })).nice();
+            } else {
+               // temporarily suppress 0 inclusion
+              yScale_master.domain(d3.extent(aesData, function(d) { return ((d.y0+d.y)||d.y); })).nice();
+            }
+          }
+          break;
+        default:
+          throw("Unknown x scale type: \""+scaleX+"\"");
+          break;
       }
       
-      var colorField=
-              _.chain(aesStructure)
-                .keys()
-                .intersection(["Color","Fill"])
-                .first().value()
-      switch(colorField && graph.scales[colorField] || "ordinal") {
+      switch(scaleColor) {
         case "ordinal":
           color = d3.scale.category20();
           // Inject alpha sorted fields into color right now,
           // to prevent color jitter when 'animating' between
           // two sims for the same data.  Could be better.
-          if (colorField=
-              _.chain(aesStructure)
-                .keys()
-                .intersection(["Color","Fill"])
-                .first().value())
+        //  if (colorField=
+        //      _.chain(aesStructure)
+        //        .keys()
+        //        .intersection(["Color","Fill"])
+        //        .first().value())
+          if (aestheticUtils.hasAesthetic(plan,"Color"))
           {
-            if (plan.data.message.extents && plan.data.message.extents[colorField]) {
-              color.domain(plan.data.message.extents[colorField])
+            if (plan.data.message.extents && plan.data.message.extents.Color) {
+              color.domain(plan.data.message.extents.Color)
             } else {
-              color.domain(_.unique(_.pluck(aesData,colorField)).sort())
+              color.domain(_.unique(_.pluck(aesData,"Color")).sort())
             }
+            
+
+          }
+          // Load color scales anyway - to set the defaults.
+          if (plan.data.message.range && plan.data.message.range.Color) {
+              color.range(plan.data.message.range.Color)
           }
           break;
         case "linear":
           color = d3.scale.log()
-            .domain(d3.extent(aesData, function(d) { return +d[colorField] }))
+            .domain(d3.extent(aesData, function(d) { return +d.Color }))
             .range(["red","yellow"]);
           break;
         default:
@@ -221,7 +293,6 @@
   
         var countFacets = allFacets.length
         
-        var facetMargin = 20
         var x = xScale_current.copy()
         
         // assume the facets contain something at all
@@ -235,10 +306,15 @@
           case "ordinal": { 
             // possible options here allow domain to be adjusted per x facet 
             // this code is a clone of code above in ordinal
-            var pluralise = function(x){return typeof(x)==="undefined"?[]:_.isArray(x)?x:[x]}
-            var xData = _.pluck(facet.values,"X").concat(pluralise(graph.extents && graph.extents.x))
-            if (graph.aesthetic.DX)
-              xData = xData.concat(aesData.map(function(d){return +d.X+d.DX})) // assume right extend DX
+            var xData
+            if (graph.limits && graph.limits.x && _.isUndefined(graph.limits.x.all)) {
+              xData=graph.limits.x.all
+            } else {
+              xData = _.pluck(facet.values,"X").concat(g3functional.pluralise(graph.extents && graph.extents.x))
+              if (aestheticUtils.hasAesthetic(plan,"DX"))
+                xData = xData.concat(facet.values.map(function(d){return +d.DX?+d.X+d.DX:+d.X})) // assume right extend DX
+            }
+                        
             x.domain(xData)
             
             x.rangeBands([0,aValue.parent.dx]); 
@@ -273,14 +349,49 @@
       })
       
       // configure each y facet, adding y-scales and axes
-      // also do x-faceting
+      // also do x-faceting to build cellfacets.
       _.map(yFacetedData,function(facet,i,allFacets){
   
         var countFacets = allFacets.length
         
-        var facetMargin = 20
-        var y = yScale_master.copy()
+        var facetMargin = (graph.dimensions && 
+                           graph.dimensions.facetMargin && !_.isUndefined(graph.dimensions.facetMargin.y)) ?
+				  graph.dimensions.facetMargin.y : 20
         
+        var y = yScale_master.copy()
+       
+        // if Y scales are free, recalculate them here
+        if (graph.limits && graph.limits.y && graph.limits.y.free) {
+          switch(scaleY) {
+            case "log":
+              y = d3.scale.log()
+                // extent is over ALL data here - is that appropriate? not always.
+                .domain(d3.extent(facet.values, function(d) { return d.Y; }))
+              break;
+            case "linear":
+              y = d3.scale.linear()
+        
+              if (plan.data.message.limits && plan.data.message.limits.y && plan.data.message.limits.y.facets &&
+                  !_.isUndefined(plan.data.message.limits.y.facets[facet.key])) {
+                y.domain(plan.data.message.limits.y.facets[facet.key]) 
+              } else {
+                if (plan.data.message.extents && !_.isUndefined(plan.data.message.extents.y)) {
+                  if (!_.isArray(plan.data.message.extents.y))
+                    plan.data.message.extents.y = [plan.data.message.extents.y]
+                  y.domain(d3.extent(facet.values.concat(_.map(plan.data.message.extents.y,function(y){return {y:y}})), 
+                    function(d) { return ((d.y0+d.y)||d.y); })).nice();
+                } else {
+                   // temporarily suppress 0 inclusion
+                  y.domain(d3.extent(facet.values, function(d) { return ((d.y0+d.y)||d.y); })).nice();
+                }
+              }
+            break;
+          default:
+            throw("Unknown x scale type: \""+scaleY+"\"");
+            break;
+          }
+        }
+
         y.range([(countFacets-i)*(height+facetMargin)/countFacets-facetMargin,
                 (countFacets-1-i)*(height+facetMargin)/countFacets])
         
@@ -298,7 +409,8 @@
         
         // Calculate the data for just this xFacet.  Note this is different
         // from xFacetedData which is for the whole 'column'.
-        facet.cellFacets = g3figureDataUtils.facetData(facet.values,"XCluster","X");
+        // TODO: should this split happen much earlier?
+//        facet.cellFacets = g3figureDataUtils.facetData(facet.values,"XCluster","X");
         
         // need to copy the master X facet data here for scales & friends
         var facetKeys = _.pluck(facet.cellFacets,"key")
@@ -374,6 +486,10 @@
         return d.key
       })
       
+      // (re)build layers
+      
+      
+      
       var positionCellFacet = function(cellFacet) {
         if (cellFacetSVG) {
           // SVG has the advantage that it's clipped (non overflow) - good for
@@ -389,7 +505,7 @@
             .attr("width",function(d){return d.xExtent[1]-d.xExtent[0]})
             .attr("x",function(d){return d.x})
             .attr("y",0)
-            .attr("height",1000)
+            .attr("height",1000) // should be actual height?
             //.append("svg")
            // .append("rect").attr("class","svgbg").style("fill","#FFF")
             //.attr("y",function(d){return this.parentNode.__data__.yScale.range()[0]})
@@ -433,9 +549,9 @@
               .redrawAxes()
               .redrawGeoms()
               
-            xFacetAxis
+          xFacetAxis
               .each(function(d,i){
-                d.brush.rebrush() // reposition and redraw the brushes
+                if(d.brush) d.brush.rebrush() // reposition and redraw the brushes
               
           })
         })
@@ -470,7 +586,7 @@
           
         xFacetAxis
           .each(function(d,i){
-            d.brush.rebrush() // reposition and redraw the brushes
+            if(d.brush) d.brush.rebrush() // reposition and redraw the brushes
           })
                           
         var endZoom = d3.event.sourceEvent.type=="mouseup"
@@ -479,11 +595,12 @@
         
       
         if (d3.event.sourceEvent.type=="mousewheel") {
-          // this case is bad for touch based zooming - it starts to shrink it while the user is still 
-          var isTouch = true
+          var isTouch = false
           if (isTouch)
             d3.select(window).on("mousemove.zoomadjust",_.once(zoomAdjust.call(this,d3.event).adjust))
           else
+            // this case is bad for touch based zooming - it starts to shrink it while the user is still 
+            // in multitouch
             _.defer(zoomAdjust.call(this,d3.event).adjust) // I should make new ones eat older ones.  
         }
         
@@ -499,7 +616,7 @@
         .attr("class","cell_facet")
         .call(positionCellFacet)
         // now create a rect background to the facet to catch events
-      
+
       //
       // Zoom
       //
@@ -507,9 +624,29 @@
       cellFacet
         .transition()
         .call(positionCellFacet)
+         
+      // (re)build layers - each cellFacet has multiple drawing layers
+      // with indepdendent data, aesthetics and geoms.
+      // note: not a VAR because we save it.
+      layerFacet = cellFacet
+        .selectAll("g.layer_facet")
+        .data(function(d){
+          return d.layerFacets
+        },function(d){
+          return d.key
+        })
+        
+      var newLayerFacet = layerFacet
+        .enter()
+        .append("g")
+        .attr("class",function(d){
+          return("layer_facet")
+          //return(["layer_facet","layer_name_"+d.key]) // Remove this for now, it breaks "exit"
+        })
       
       if (graph.onZoom) {
         xFacetAxis
+          .select(".zoom_layer")
           .each(function(d,i) {
             var zoom = d3.behavior
               .zoom()
@@ -535,8 +672,9 @@
             // what do we do?  It has lots of arguments because it was refactored
             // should fix.
             d.brush =
-              g3brush.brush(d3.select(this), graph, aesStructure, 
-                            aesData, // should we really supply all the data? or just the facet's?
+              g3brush.brush(d3.select(this), graph, 
+                            master_layer.metaData.aestheticStructure, 
+                            master_layer.data.aesthetic, // should we really supply all the data? or just the facet's?
                             d.xScale,
                             height, 
                             scaleX)   
@@ -555,6 +693,11 @@
       // note that cellfacets don't get axes - those are handled
       // only once per vertical , in the master xaxis object
       
+      // Layers
+      layerFacet
+        .exit()
+        .remove() // perhaps a little aggressive  
+        
       cellFacet
         .exit()
         .transition()
@@ -563,6 +706,8 @@
       
       return subfigure
     }
+    
+    subfigure.setupLayers = function(){}
     
     // redrawAxes draws the axes and legends.  It should be called
     // at least once before redrawGeoms is called. (old comment)
@@ -573,12 +718,12 @@
       
       // draw the XCluster axis
       // note deep clusters or XCluster + X axis can be visually ugly sometimes.
-      if (graph.aesthetic.XCluster) 
+      if (aestheticUtils.hasAesthetic(plan,"XCluster")) 
       {
         var clickEvent = 
           graph.onClick && graph.onClick.XCluster &&
           g3events.updateShinyInputFromHierFn(graph.onClick.XCluster.input,
-                                              aesStructure["XCluster"])
+                                              plan.layers[0].metaData.aestheticStructure["XCluster"])
           
         g3xcluster.hierAxis(root,partitionedNodes,height+margin.bottom-margin.xcluster,width,margin.xcluster,clickEvent,graph.format&&graph.format.XCluster)
       }
@@ -600,7 +745,7 @@
 
         xAxisNode
           .attr("transform", "translate(0," + height + ")")
-          .select("text")
+          .select("text").filter(function(d,i){return i==0})
             .attr("x", width)
             .attr("y", -6)
             .style("text-anchor", "end")
@@ -634,12 +779,13 @@
             }
             
             
-            if (fast)
-              s.call(d.xAxis)
-            else
+            if (fast) {
+              s.call(d.xAxis
+              .tickSize(-height)) // enables (flickery) x grid - remove to just have ticks
+            } else
               s
                 .transition()
-                .call(d.xAxis)
+                .call(d.xAxis.tickSize(-height))
 
             return s;
           }) 
@@ -671,6 +817,7 @@
             var PixelsPerTick = 20
             d.yAxis.ticks(Math.min(extent/PixelsPerTick,10))
           }
+          d.yAxis.tickSize(-width)
           d.yAxis(s)
           return s;
         })
@@ -694,6 +841,9 @@
                 s
                   .attr("y", function(d){return d.yScale.range()[1]})
                   .attr("x", 6) // or x for vertical
+									// http://www.w3.org/TR/SVG/text.html#BaselineAlignmentProperties
+									// TODO: make this configurable - or via stylesheet?
+                  .attr("alignment-baseline", "baseline")
                   .style("text-anchor", "start")
                 break;
             }
@@ -701,19 +851,34 @@
           })
   
           .text( function(d){
-            return graph.labels.y + (("undefined"==d.key)?"":(" "+d.key))
+ 						// handle yfacet type for date
+
+						scaleYFacet = 
+							(graph.scales && graph.scales.yfacet) ? graph.scales.yfacet : "linear"
+
+						scaleYFacetFormat = 
+						  (graph.format && graph.format.yfacet) ? d3.time.format(graph.format.yfacet) : d3.time.format.iso
+
+					  return graph.labels.y + (("undefined"==d.key)?""
+						  : (" "+( scaleYFacet=="date" 
+							         ? scaleYFacetFormat(new Date(+d.key))
+											 : d.key )));
           } )
         
       // draw a legend if we have used any colors
-      if (graph.aesthetic.Color || graph.aesthetic.Fill) {
-        legendAesthetic = graph.aesthetic.Color?"Color":"Fill"
+      if (aestheticUtils.hasAesthetic(plan,"Color")) {
+        // TODO: allow filtering to read from any layer
+        var aesStructure = master_layer.metaData.aestheticStructure
+        // TODO: fixme - get labels from all layers, collapse compound structure ids.
+        var label = graph.labels && graph.labels.Color || aesStructure.Color
         var legendPos = {x:width+5,y:0};
-        var clickEvent = graph.onClick && graph.onClick[legendAesthetic] &&
-          function(d){g3figure.filter.update(d?_.object([aesStructure[legendAesthetic]],
+        var clickEvent = graph.onClick && graph.onClick.Color &&
+          function(d){g3figure.filter.update(d?_.object([aesStructure.Color],
                                      [function(x){
                                        return x==d
                                      }]):{})}
-        g3legends.discrete_color(root,color,legendPos,aesStructure[legendAesthetic],
+        clickEvent = clickEvent || function(x){return false}
+        g3legends.discrete_color(root,color,legendPos,label,
           clickEvent,height,
           graph.position && graph.position.x == "stack" // invert color legend if stacked
           )
@@ -727,80 +892,109 @@
     // redraw the currently displayed set of geoms.
     // fast indicates that the fast geom functions should be used that
     // do no transitions, joins, enters or exits and update only critical attributes
+    // Note that geoms are per layer.  this means the geom key is false now - since multiple
+    // layers could use identical geoms
     subfigure.redrawGeoms = function(fast) {
-      var geoms = _.isArray(graph.geom)?graph.geom:[graph.geom]
       
-      _.map(geoms, function(geom) {
-        switch(geom) {
+      layerFacet
+        .each(function(d,i){
+        
+        var layerFacet = d3.select(this)
+        
+        if (d.values.length == 0) return; // TODO: fix this so the layer name is in the layerfacet (or a link)
+        // otherwise length 0 geoms cannot delete themselves (but maybe they don't exist)
+        
+        var geoms = d.values[0].layer.geom
+        var aesthetic = d.values[0].layer.aesthetic
 
-        case "voronoi":
-          cellFacet
-            .each(function(d,i){
-              // note that for linear/linear plots voronoi points could be scaled later - 
-              // at the point of drawing, which would save multiple calculations.  However
-              // the same is not true of ordinal, since it's not clear that arbitrary 
-              // ordinal values are real.
-              g3stats.voronoi(d.values,d.xScale,d.yScale)
-            })
-          
-
-        case "point":
-        case "point_bar":
-        case "bar":
-        case "range_bar":
-        case "point_range_bar":
-
+        _.map(geoms, function(geom) {
+          switch(geom) {
   
-          var clickEvent;
-          if (graph.onBrush && graph.onBrush.x &&
-              graph.onBrush.x.drag && graph.onBrush.x.drag.input) {
-                  
-            var clickEventInner = 
-              g3events.updateShinyInputFromGeomFn(graph.onBrush.x.drag.input,
-              aesStructure.XFilterKey?"XFilterKey":"X")
-          
-            clickEvent = function(e) { 
-              clickEventInner(d3.event.target.__data__)
-              d3.event.stopPropagation(); //? no idea what this does
-            };
-          }
-          if (graph.onClick && graph.onClick.x &&
-              graph.onClick.x.input) {
-                  
-            var clickEventInner = 
-              g3events.updateShinyInputFromGeomFn(graph.onClick.x.input,
-                aesStructure.XFilterKey?"XFilterKey":"X")
-          
-            clickEvent = function(e) { 
-              clickEventInner(d3.event.target.__data__)
-              d3.event.stopPropagation(); //? no idea what this does
-            };
-          }
-          
+          case "voronoi":
+            layerFacet
+              .each(function(d,i){
+                // note that for linear/linear plots voronoi points could be scaled later - 
+                // at the point of drawing, which would save multiple calculations.  However
+                // the same is not true of ordinal, since it's not clear that arbitrary 
+                // ordinal values are real.
+                g3stats.voronoi(d.values,this.parentNode.__data__.xScale,this.parentNode.__data__.yScale)
+              })
             
-          if(!fast)
-            dataPointSelector = g3geoms[geom](cellFacet,function(d){return d.values},color,clickEvent)
-              .draw(cellFacet)
-          else
-            g3geoms[geom](cellFacet,function(d){return d.values},color,clickEvent)
-              .fast_redraw(cellFacet)
-            
-          break;
-        case "line": // different way to send values
-          if(!fast)
-            dataPointSelector = g3geoms[geom](cellFacet,function(d){return d3.nest().key(function(d){return d.Color}).entries(d.values)},color,clickEvent)
-              .draw(cellFacet)
-          else
-            g3geoms[geom](cellFacet,function(d){return [d.values]},color,clickEvent)
-              .fast_redraw(cellFacet)
-            
-          break;
+  
+          case "point":
+          case "point_bar":
+          case "bar":
+          case "range_bar":
+          case "point_range_bar":
+  
     
-        default:
-          throw({message:"Unknown geom=\""+geom+"\" in plot specification"})  
+            var clickEvent;
+            if (graph.onBrush && graph.onBrush.x &&
+                graph.onBrush.x.drag && graph.onBrush.x.drag.input) {
+                    
+              var clickEventInner = 
+                g3events.updateShinyInputFromGeomFn(graph.onBrush.x.drag.input,
+                aesthetic.XFilterKey?"XFilterKey":"X")
+            
+              clickEvent = function(e) { 
+                clickEventInner(d3.event.target.__data__)
+                d3.event.stopPropagation(); //? no idea what this does
+              };
+            }
+            if (graph.onClick && graph.onClick.x &&
+                graph.onClick.x.input) {
+                    
+              var clickEventInner = 
+                g3events.updateShinyInputFromGeomFn(graph.onClick.x.input,
+                  aesthetic.XFilterKey?"XFilterKey":"X")
+            
+              clickEvent = function(e) { 
+                clickEventInner(d3.event.target.__data__)
+                d3.event.stopPropagation(); //? no idea what this does
+              };
+            }
+
+            if(!fast)
+              dataPointSelector = g3geoms[geom](layerFacet,function(d){return d.values},color,clickEvent)
+                .draw(layerFacet)
+            else
+              g3geoms[geom](layerFacet,function(d){return d.values},color,clickEvent)
+                .fast_redraw(layerFacet)
+
+            break;
+
+          case "area": // different way to send values
+            if(!fast)
+              dataPointSelector = g3geoms[geom](layerFacet,function(d){return d3.nest().key(function(d){return d.Color}).entries(d.values)},color,clickEvent)
+                .draw(layerFacet)
+            else
+              g3geoms[geom](layerFacet,function(d){return [d.values]},color,clickEvent)
+                .fast_redraw(layerFacet)
+              
+            break;
+
+          case "line": // different way to send values
+            if(!fast)
+              dataPointSelector = g3geoms[geom](layerFacet,function(d){
+                return _.map(d3.nest().key(function(d) {
+                                        return d.Group || d.Color
+                                    }).entries(d.values),function(c) {
+                                        if(aesthetic.Color) {c.Color = c.values[0].Color}; return c;
+                                    })},color,clickEvent)
+                .draw(layerFacet)
+            else
+              g3geoms[geom](layerFacet,function(d){return [d.values]},color,clickEvent)
+                .fast_redraw(layerFacet)
+              
+            break;
+
+          default:
+            throw({message:"Unknown geom=\""+geom+"\" in plot specification for layer XXX"})  
         }
-      })
-      
+        })
+
+        })
+
       return subfigure
     }
 
@@ -815,10 +1009,9 @@
         })()
       
       // Return a handle to update this plot for filtering etc.
-      plotHandle.update = function(filterSpec) {
-            function negate(f) { return function(x){ return !f(x) } }
-            var filterFn=aestheticUtils.filterFromFilterSpec(filterSpec,aesStructure)
-
+      plotHandle.update = function(filterSpec) {        
+            var filterFn=aestheticUtils.filterFromFilterSpec(filterSpec,master_layer.metaData.aestheticStructure)
+            // TODO: dataPointSelector is not appropriate when multiple layers and geoms exist.  Fix somehow to use
             el.select("g.plot").selectAll(dataPointSelector)
             .style("opacity",function(d) { return filterFn(d)?1.0:0.2})
       }

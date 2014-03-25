@@ -1,0 +1,94 @@
+Notes on adding layers:
+===========
+
+Warning notes:
+----------
+
+Keep it functional wherever possible by adding a normalise and letting it accept old style data.
+
+Message notes:
+----------
+
+Unusual fields:
+grid can come from ONE layer and ONE plot.  OR rather it's a 'separate' plot? referencing the other data? fie!
+
+data can be a table or a name - which borrows from another layer?
+
+layers are named (or numbered?)
+
+structure is per layer
+aes is per layer
+
+simplification is carried out either in server or in client, or via a special simplified server call
+
+stats?
+
+labels is BOTH at the plot and layer level - x and y should be global, but color may be by layer (e.g. a red point is a distinct idea from rainbow of lines, and will have separate legends?)  If color is at the global layer then ONE legend is present.
+
+onZoom is global
+
+onBrush is ... global but local if it needs to extract a property of the data point rather than just the axis (maybe)
+
+scales is global (for sure)!
+
+name is global AND local
+
+geom is local for sure
+
+Architecture notes
+----------
+
+Consider simply welding all the layers together once we have transformed into aesthetic (and keeping a layer reference in the object for filtering, etc.)  Use nest to flip the structure in and out of shape.  This would make the rework a whole lot easier.  How would we handle geoms?  Would we be able to handle reloading easily?
+
+Aesthetic notes:
+-----------
+
+re-use of Color will be merged
+
+are Color and Fill separate?
+
+Xcluster aesthetic has to be the SAME across all layers - oh, but how do we calculate the partitions when there are multiple layers? TODO
+
+position is local
+
+Legend Notes:
+---------
+
+Color is unified. (how will I do outline?)
+
+If two layers each have a different aesthetic mapping for color (ie the structural name differs), there are two challenges:
+
+0) Are there two legends or one?  two might be nice, but I have no mechanism right now 
+1) what's the legend label?  - Combining is best since we can override it?
+2) how does filtering work when they are clicked on?  Currently filtering consumes the structural name, which may differ
+
+Filter Notes:
+---------
+
+Filtering happens in various ways.  Let's start with
+
+Legend - click a color
+XCluster - click a partition
+
+filtering works (just on master layer)
+
+Linking Notes:
+----------
+Clicking and brushing need to work before filters do - filters are largely gimmicky.
+
+now work - just on 'master' (first) layer
+
+Clicking may not work
+
+Popover Notes:
+---------
+
+
+Other Bugs:
+-----
+Geom Clicking not tested yet
+DatapointSelector is clearly wrong - should only be for 'master' layer - or for all layers separately.
+There's a stray NA in layer
+Area should base at zero perhaps?  or call it something other than area - such as fill
+Layers should be KEYED for animation purposes
+bar (rangeband) should be available with linear scales, too.

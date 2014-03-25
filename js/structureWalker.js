@@ -24,6 +24,8 @@
 // structureWalker().other(function(x){return {a: ["bob",0], b: "cheese"}[x]})(["a", {b: "b"}])
 //   -> [["bob",0],{b: "cheese"}]
 //
+// the someFn arguments accept structure, iterator, context as arguments (iterator and context optional)
+// structure is the structure component currently under consideraton
 
 (function(exports){
   

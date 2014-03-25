@@ -22,6 +22,9 @@
     })
       .entries(dataToFacet)
     
+    if (_.isUndefined(coordAesthetic)) return dnest;
+    
+    // not convinced the code below is used.  not needed for cell facets, anyway
     var coordAccessor = function(d){return d[coordAesthetic]}
     
     // now decorate the nested entries with yscale

@@ -7,7 +7,7 @@ require(shiny);
 
 source("shiny_extend_g3.R")
 
-static_links=list(`Github for g3plot`="https://github.com/404",
+static_links=list(`Github for g3plot`="https://github.com/alexbbrown/g3plot-1",
                   `Shiny`="http://shiny.rstudio.org",
                   `D3`="http://d3js.org",
                   `Google Groups`="http://groups.google.com/group/shiny-discuss")
@@ -21,10 +21,10 @@ lapply(Sys.glob(c("*.R","*.js","js/*.js")),
 shinyUI(pageWithSidebar(
   
   # Application title
-  headerPanel(tags$a(href="https://github.com/404","G3plot=D3(Shiny(data())"),windowTitle="G3plot for Shiny and D3"),
+  headerPanel(tags$a(href="https://github.com/alexbbrown/g3plot-1","G3plot=D3(Shiny(data()))"),windowTitle="G3plot for Shiny and D3"),
       
   sidebarPanel(
-    tags$p("This page is mainly to discover why g3plot is bad by applying it to data samples."),
+    tags$p("A demo of Intel's (c) g3plot API (BSD licence) using standard R data sets."),
     h3("Data Selection"),
     tags$p("some runs have a plot function.  Others need your help"),
     uiOutput("dataSetControls"),
